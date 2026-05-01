@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IM AgroJardinería · Cotizador Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;400;500;600;700&display=swap');
+:root{
+  --forest:#0e2318;--pine:#1a3d2b;--fern:#2d6a4f;--moss:#52b788;--dew:#d8f3dc;
+  --ember:#d4651a;--flame:#f4831f;--gold:#f5a623;--cream:#fdf8f0;
+  --paper:#f7f5f0;--stone:#e8e5de;--ash:#c4c1b8;--slate:#7a7870;--ink:#1c1b18;--white:#ffffff;
+  --r1:6px;--r2:10px;--r3:16px;--r4:22px;
+  --s1:0 1px 3px rgba(14,35,24,.06),0 1px 2px rgba(14,35,24,.04);
+  --s2:0 3px 10px rgba(14,35,24,.08),0 1px 3px rgba(14,35,24,.05);
+  --s3:0 8px 24px rgba(14,35,24,.11),0 3px 8px rgba(14,35,24,.06);
+  --s4:0 20px 48px rgba(14,35,24,.14),0 6px 16px rgba(14,35,24,.08);
+  --serif:"DM Serif Display",Georgia,serif;
+  --sans:"DM Sans",system-ui,sans-serif;
+  --t1:150ms cubic-bezier(.4,0,.2,1);--t2:250ms cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px;-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100dvh}
+button,input{font-family:var(--sans)}
+button{cursor:pointer}
+
+/* HEADER */
+.hdr{background:var(--forest);position:sticky;top:0;z-index:400;box-shadow:0 2px 20px rgba(0,0,0,.35)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;gap:8px}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand-icon{width:32px;height:32px;border-radius:var(--r2);flex-shrink:0;background:linear-gradient(135deg,var(--fern),var(--moss));display:flex;align-items:center;justify-content:center;font-size:16px}
+.brand-name{font-family:var(--serif);font-size:15px;color:var(--white);line-height:1.1}
+.brand-sub{font-size:9px;color:rgba(255,255,255,.38);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.com-pill{display:none;align-items:center;gap:5px;background:rgba(212,101,26,.18);border:1px solid rgba(212,101,26,.4);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;color:#ffc07a}
+.com-pill b{font-family:var(--serif);font-size:12px;font-style:italic;color:#ffd9a8}
+.btn-cart{background:var(--ember);color:var(--white);border:none;border-radius:var(--r2);padding:7px 12px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:background var(--t1)}
+.btn-cart:hover{background:var(--flame)}
+.cart-badge{background:var(--white);color:var(--ember);border-radius:50%;width:17px;height:17px;font-size:9.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+/* NAV */
+.nav{display:flex;border-top:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.2)}
+.nav-btn{flex:1;padding:7px 2px;border:none;background:none;font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.35);transition:all var(--t1);position:relative}
+.nav-btn.active{color:var(--gold);background:rgba(212,101,26,.1)}
+.nav-btn.active::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--gold);border-radius:2px 2px 0 0}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
+
+/* CATALOG BAR */
+.cat-bar{background:var(--white);border-bottom:1px solid var(--stone);padding:8px 12px 7px;position:sticky;z-index:200}
+.srch-wrap{position:relative;margin-bottom:7px}
+.srch-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.3;pointer-events:none;font-size:13px}
+.srch{width:100%;padding:8px 10px 8px 30px;border:1.5px solid var(--stone);border-radius:var(--r2);font-size:12px;background:var(--paper);color:var(--ink);outline:none;transition:border-color var(--t1),background var(--t1)}
+.srch:focus{border-color:var(--moss);background:var(--white)}
+.srch::placeholder{color:var(--ash)}
+.chips{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:4px 10px;border-radius:20px;border:1.5px solid var(--stone);background:var(--white);font-size:9.5px;font-weight:600;color:var(--slate);transition:all var(--t1);letter-spacing:.2px;white-space:nowrap}
+.chip:hover{border-color:var(--moss);color:var(--fern)}
+.chip.active{background:var(--pine);border-color:var(--pine);color:var(--white)}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;padding:8px}
+@media(min-width:480px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr);gap:10px;padding:12px}}
+
+/* CARD */
+.card{background:var(--white);border-radius:var(--r3);padding:11px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--s1);border:1.5px solid var(--stone);transition:transform var(--t2),box-shadow var(--t2),border-color var(--t2);position:relative;overflow:hidden}
+.card:hover{transform:translateY(-2px);box-shadow:var(--s2);border-color:var(--ash)}
+.card.in-cart{border-color:var(--moss)}
+.card.in-cart::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px;background:linear-gradient(90deg,var(--fern),var(--moss))}
+.card-qty{position:absolute;top:8px;right:8px;background:var(--pine);color:var(--white);border-radius:50%;width:18px;height:18px;font-size:9.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.card-cat{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--fern);background:var(--dew);border-radius:var(--r1);padding:2px 6px;width:fit-content}
+.card-name{font-size:11px;font-weight:500;line-height:1.35;color:var(--ink);flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-row{display:flex;justify-content:space-between;align-items:center}
+.card-code{font-size:9px;color:var(--ash)}
+.card-brand{font-size:9px;font-weight:700;color:var(--fern)}
+.card-price{font-family:var(--serif);font-size:18px;color:var(--pine);line-height:1}
+.card-price small{font-family:var(--sans);font-size:9.5px;color:var(--ash);font-weight:400}
+.card-com{background:var(--cream);border:1px solid #f0d8b0;border-radius:var(--r1);padding:4px 8px;display:flex;justify-content:space-between;align-items:center}
+.card-com-lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--ember)}
+.card-com-val{font-family:var(--serif);font-size:13px;color:#a84a00;font-style:italic}
+.card-actions{display:flex;gap:5px}
+.btn-add{flex:1;padding:6px 8px;background:var(--pine);color:var(--white);border:none;border-radius:var(--r1);font-size:10.5px;font-weight:600;transition:background var(--t1)}
+.btn-add:hover{background:var(--fern)}
+.btn-add.added{background:var(--ember)}
+
+.empty-state{grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--ash);font-size:13px}
+
+/* AI MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(14,35,24,.7);z-index:600;display:none;align-items:flex-end;backdrop-filter:blur(4px)}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--white);border-radius:var(--r3) var(--r3) 0 0;width:100%;max-height:90dvh;display:flex;flex-direction:column;box-shadow:var(--s4);animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-head{padding:14px 16px 12px;border-bottom:1px solid var(--stone);display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.modal-pill{display:inline-flex;align-items:center;gap:4px;margin-bottom:4px;background:var(--cream);border:1px solid var(--gold);border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ember)}
+.modal-prod-name{font-family:var(--serif);font-size:15px;color:var(--pine);line-height:1.2}
+.modal-prod-meta{font-size:10px;color:var(--ash);margin-top:2px}
+.btn-close{background:var(--paper);border:1.5px solid var(--stone);border-radius:var(--r1);width:28px;height:28px;font-size:14px;color:var(--slate);flex-shrink:0;transition:all var(--t1)}
+.btn-close:hover{background:var(--stone)}
+.modal-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.chat-msgs{display:flex;flex-direction:column;gap:10px;min-height:60px;flex:1}
+.msg{max-width:88%;display:flex;flex-direction:column;gap:3px}
+.msg.user{align-self:flex-end;align-items:flex-end}
+.msg.ai{align-self:flex-start;align-items:flex-start}
+.msg-bubble{padding:9px 12px;border-radius:var(--r3);font-size:12px;line-height:1.5}
+.msg.user .msg-bubble{background:var(--pine);color:var(--white);border-bottom-right-radius:var(--r1)}
+.msg.ai .msg-bubble{background:var(--paper);border:1.5px solid var(--stone);color:var(--ink);border-bottom-left-radius:var(--r1)}
+.msg-time{font-size:9px;color:var(--ash);padding:0 2px}
+.ai-typing{display:flex;gap:4px;padding:12px;background:var(--paper);border:1.5px solid var(--stone);border-radius:var(--r3) var(--r3) var(--r3) var(--r1);width:fit-content}
+.ai-typing span{width:6px;height:6px;background:var(--ash);border-radius:50%;animation:bounce .9s infinite}
+.ai-typing span:nth-child(2){animation-delay:.15s}
+.ai-typing span:nth-child(3){animation-delay:.30s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.quick-qs{display:flex;flex-wrap:wrap;gap:5px}
+.quick-q{padding:5px 10px;background:var(--white);border:1.5px solid var(--stone);border-radius:20px;font-size:10.5px;color:var(--slate);font-weight:500;transition:all var(--t1)}
+.quick-q:hover{border-color:var(--moss);color:var(--fern);background:var(--dew)}
+.chat-input-row{display:flex;gap:6px}
+.chat-in{flex:1;padding:9px 12px;border:1.5px solid var(--stone);border-radius:var(--r2);font-size:12px;background:var(--paper);color:var(--ink);outline:none;transition:border-color var(--t1)}
+.chat-in:focus{border-color:var(--moss);background:var(--white)}
+.chat-in::placeholder{color:var(--ash)}
+.btn-send{padding:9px 14px;background:var(--pine);color:var(--white);border:none;border-radius:var(--r2);font-size:13px;transition:background var(--t1)}
+.btn-send:hover{background:var(--fern)}
+.btn-send:disabled{opacity:.5;cursor:not-allowed}
+
+/* CART */
+.cart-wrap{padding:8px}
+.cart-empty{text-align:center;padding:56px 20px;color:var(--ash)}
+.cart-empty .ei{font-size:36px;margin-bottom:8px;opacity:.35}
+.ci{background:var(--white);border-radius:var(--r2);padding:10px 11px;margin-bottom:6px;box-shadow:var(--s1);border:1.5px solid var(--stone);display:flex;gap:9px;align-items:flex-start}
+.ci-info{flex:1;min-width:0}
+.ci-name{font-size:11.5px;font-weight:500;line-height:1.3;margin-bottom:1px}
+.ci-cat{font-size:9px;color:var(--fern);font-weight:600}
+.ci-unit{font-size:10px;color:var(--ash);margin-top:2px}
+.ci-com{display:inline-flex;align-items:center;gap:3px;margin-top:4px;background:var(--cream);border:1px solid #f0d8b0;border-radius:4px;padding:2px 7px;font-size:9.5px;color:#9a4a00;font-weight:600}
+.ci-com b{font-family:var(--serif);font-size:10.5px;font-style:italic}
+.ci-ctrl{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.btn-del{background:none;border:none;color:var(--ash);font-size:13px;transition:color var(--t1)}
+.btn-del:hover{color:#c44}
+.qty{display:flex;align-items:center;border:1.5px solid var(--stone);border-radius:var(--r1);overflow:hidden}
+.q-btn{background:var(--paper);border:none;width:26px;height:26px;font-size:14px;font-weight:700;color:var(--fern);transition:background var(--t1)}
+.q-btn:hover{background:var(--stone)}
+.q-num{width:26px;text-align:center;font-size:12px;font-weight:700}
+.ci-sub{font-family:var(--serif);font-size:14px;color:var(--pine);font-style:italic}
+.com-panel{background:linear-gradient(135deg,#fffaf0,#fff5e0);border:1.5px solid #f0d080;border-radius:var(--r3);padding:12px 14px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cpl-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ember)}
+.cpl-sub{font-size:9.5px;color:#c07030;margin-top:2px}
+.cpl-val{font-family:var(--serif);font-size:26px;color:#a84f00;font-style:italic}
+.totals{background:var(--white);border-radius:var(--r3);border:1.5px solid var(--moss);padding:13px;box-shadow:var(--s2)}
+.t-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--stone)}
+.t-row:last-of-type{border-bottom:none}
+.t-lbl{font-size:11.5px;color:var(--slate)}
+.t-val{font-family:var(--serif);font-size:13px;color:var(--ink);font-style:italic}
+.t-row.main .t-lbl{font-size:12.5px;font-weight:700;color:var(--pine)}
+.t-row.main .t-val{font-size:21px;color:var(--pine)}
+
+/* CUOTAS */
+.cuotas-box{background:linear-gradient(135deg,#f0faf5,#e8f5ee);border:1.5px solid var(--moss);border-radius:var(--r3);padding:13px;margin-top:10px}
+.cuotas-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--fern);margin-bottom:10px}
+.cuotas-tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+.cuota-tab{flex:1;min-width:44px;padding:5px 4px;border:1.5px solid var(--stone);border-radius:var(--r1);background:var(--white);font-size:10px;font-weight:600;color:var(--slate);transition:all var(--t1);text-align:center}
+.cuota-tab.active{background:var(--pine);border-color:var(--pine);color:var(--white)}
+.cuotas-result{text-align:center}
+.cuota-monto{font-family:var(--serif);font-size:28px;color:var(--pine);font-style:italic}
+.cuota-sub{font-size:10px;color:var(--slate);margin-top:2px}
+.cuota-nota{font-size:9.5px;color:var(--ash);margin-top:6px;font-style:italic}
+.btn-go{width:100%;margin-top:11px;padding:12px;background:var(--ember);color:var(--white);border:none;border-radius:var(--r2);font-size:12.5px;font-weight:600;transition:background var(--t1);letter-spacing:.1px}
+.btn-go:hover{background:var(--flame)}
+
+/* HISTORIAL */
+.hist-wrap{padding:8px}
+.hist-hdr{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 10px}
+.hist-title{font-family:var(--serif);font-size:18px;color:var(--pine)}
+.btn-clr{background:none;border:1.5px solid var(--stone);border-radius:var(--r1);padding:4px 10px;font-size:10px;color:var(--ash);transition:all var(--t1)}
+.btn-clr:hover{border-color:#c44;color:#c44}
+.hist-empty{text-align:center;padding:48px 20px;color:var(--ash)}
+.stat-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+.stat-card{background:var(--white);border-radius:var(--r2);padding:10px 12px;border:1.5px solid var(--stone);text-align:center}
+.stat-val{font-family:var(--serif);font-size:20px;color:var(--pine);font-style:italic;line-height:1}
+.stat-lbl{font-size:8.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--ash);margin-top:3px;font-weight:600}
+.stat-card.green{border-color:var(--moss)}
+.stat-card.green .stat-val{color:var(--fern)}
+.stat-card.orange .stat-val{color:var(--ember)}
+.hcard{background:var(--white);border-radius:var(--r2);padding:12px 13px;margin-bottom:7px;box-shadow:var(--s1);border:1.5px solid var(--stone)}
+.hcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px}
+.hcard-num{font-family:var(--serif);font-size:13px;color:var(--pine);font-style:italic}
+.hcard-date{font-size:9.5px;color:var(--ash)}
+.hcard-client{font-size:12px;font-weight:500;margin-bottom:2px}
+.hcard-items{font-size:10px;color:var(--slate)}
+.hcard-prods{font-size:10px;color:var(--ash);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcard-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:9px;flex-wrap:wrap;gap:6px}
+.hcard-total{font-family:var(--serif);font-size:16px;color:var(--pine);font-style:italic}
+.hcard-com{font-size:10px;color:var(--ember);font-weight:600}
+.sts{padding:4px 8px;border:1.5px solid var(--stone);border-radius:var(--r1);font-size:10px;font-weight:600;background:var(--paper);color:var(--ink);outline:none;cursor:pointer;transition:all var(--t1)}
+.sts.enviada{border-color:var(--ash);color:var(--slate)}
+.sts.negoc{border-color:var(--gold);color:#8a6000;background:#fffbe8}
+.sts.ganada{border-color:var(--moss);color:var(--fern);background:var(--dew)}
+.sts.perdida{border-color:#f0a0a0;color:#c44;background:#fff5f5}
+
+/* FORM */
+.form-wrap{padding:8px}
+.fcard{background:var(--white);border-radius:var(--r3);padding:14px;margin-bottom:8px;box-shadow:var(--s1);border:1.5px solid var(--stone)}
+.fcard-title{font-family:var(--serif);font-size:15px;color:var(--pine);font-style:italic;margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--stone);display:flex;align-items:center;gap:6px}
+.fg{margin-bottom:9px}
+.fg label{display:block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ash);margin-bottom:4px}
+.fg input{width:100%;padding:8px 11px;border:1.5px solid var(--stone);border-radius:var(--r1);font-size:12px;background:var(--paper);color:var(--ink);outline:none;transition:border-color var(--t1),background var(--t1)}
+.fg input:focus{border-color:var(--moss);background:var(--white)}
+.fg input::placeholder{color:var(--ash)}
+
+/* PROFORMA */
+.pf-wrap{padding:8px}
+.pf-doc{background:var(--white);border-radius:var(--r3);box-shadow:var(--s3);border:1px solid var(--stone);overflow:hidden}
+.pf-head{background:var(--forest);color:var(--white);padding:18px 16px 13px}
+.pf-co{font-family:var(--serif);font-size:20px;font-style:italic}
+.pf-sub{font-size:8px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1.4px;margin-top:1px}
+.pf-stripe{height:3px;background:linear-gradient(90deg,var(--ember),var(--flame))}
+.pf-meta{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px}
+.pf-num{background:var(--ember);padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:700}
+.pf-date{font-size:10.5px;opacity:.55}
+.pf-body{padding:14px}
+.pf-sec{margin-bottom:13px;padding-bottom:12px;border-bottom:1px solid var(--stone)}
+.pf-sec:last-child{border-bottom:none}
+.pf-sec h4{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--moss);margin-bottom:7px}
+.cli-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}
+.cli-item{font-size:11px}
+.cli-item strong{display:block;font-size:8px;color:var(--ash);text-transform:uppercase;letter-spacing:.4px}
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{background:var(--forest);color:var(--white);padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px;text-transform:uppercase}
+.tbl th:last-child{text-align:right}
+.tbl td{padding:7px;border-bottom:1px solid var(--stone);vertical-align:top}
+.tbl td:last-child{text-align:right;font-weight:600;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:nth-child(even) td{background:var(--paper)}
+.pf-total-main{background:var(--forest);color:var(--white);padding:9px 11px;border-radius:var(--r2);display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.pf-tm-lbl{font-size:12px;font-weight:600}
+.pf-tm-val{font-family:var(--serif);font-size:20px;font-style:italic}
+.pf-t-row{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px solid var(--stone)}
+.pf-t-row:last-child{border-bottom:none}
+.pf-conds{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.pf-cond{background:var(--paper);border-radius:var(--r2);padding:9px;border-left:2.5px solid var(--moss)}
+.pf-cond h5{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--fern);margin-bottom:3px}
+.pf-cond p{font-size:10px;color:var(--slate);line-height:1.4}
+.pf-note{text-align:center;padding:8px 0 2px;font-size:9px;color:var(--ash);font-style:italic}
+.pf-actions{padding:8px;display:flex;flex-direction:column;gap:7px}
+.btn-action{width:100%;padding:12px;border:none;border-radius:var(--r2);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity var(--t1),transform 60ms}
+.btn-action:active{transform:scale(.98)}
+.btn-pdf{background:var(--pine);color:var(--white)}
+.btn-pdf:hover{background:var(--fern)}
+.btn-wsp{background:#22c55e;color:var(--white)}
+.btn-wsp:hover{background:#16a34a}
+.btn-new{background:var(--paper);color:var(--ink);border:1.5px solid var(--stone)}
+
+/* TOAST & LOADER */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--pine);color:var(--white);padding:8px 18px;border-radius:20px;font-size:12px;font-weight:600;z-index:999;transition:transform .25s ease;white-space:nowrap;box-shadow:var(--s3);pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.loader{position:fixed;inset:0;background:rgba(14,35,24,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:var(--white);gap:14px}
+.spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader p{font-size:12px;opacity:.7}
+
+</style>
+</head><body>
+<div class="loader" id="loader" style="display:none"><div class="spin"></div><p>Generando PDF...</p></div>
+<div class="toast" id="toast"></div>
+<header class="hdr">
+  <div class="hdr-top">
+    <div class="brand">
+      <div class="brand-icon">🌿</div>
+      <div>
+        <div class="brand-name">IM AgroJardinería</div>
+        <div class="brand-sub">Maquinaria Agrícola</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="com-pill" id="com-pill">💰 <b id="com-pill-val">$0.00</b></div>
+      <button class="btn-cart" onclick="ir('carrito')">🛒 Carrito <span class="cart-badge" id="cart-badge">0</span></button>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" data-page="catalogo"  onclick="ir('catalogo')">📦 Catálogo</button>
+    <button class="nav-btn"        data-page="carrito"   onclick="ir('carrito')">🛒 Carrito</button>
+    <button class="nav-btn"        data-page="historial" onclick="ir('historial')">📋 Historial</button>
+    <button class="nav-btn"        data-page="cliente"   onclick="ir('cliente')">👤 Cliente</button>
+    <button class="nav-btn"        data-page="proforma"  onclick="ir('proforma')">📄 Proforma</button>
+  </nav>
+</header>
+<main>
+<section class="page active" id="page-catalogo">
+  <div class="cat-bar" id="cat-bar">
+    <div class="srch-wrap">
+      <span class="srch-ico">🔍</span>
+      <input class="srch" id="srch" type="search" placeholder="Buscar producto, código o marca..." oninput="filtrar()" autocomplete="off">
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+  <div class="grid" id="grid"></div>
+</section>
+<section class="page" id="page-carrito"><div class="cart-wrap" id="cart-wrap"></div></section>
+<section class="page" id="page-historial"><div class="hist-wrap" id="hist-wrap"></div></section>
+<section class="page" id="page-cliente">
+  <div class="form-wrap">
+    <div class="fcard">
+      <div class="fcard-title">👤 Datos del Cliente</div>
+      <div class="fg"><label>Nombre completo *</label><input id="c-nombre" type="text" placeholder="Ej: Juan Pérez García"></div>
+      <div class="fg"><label>Cédula / RUC *</label><input id="c-cedula" type="text" placeholder="Ej: 0901234567"></div>
+      <div class="fg"><label>Teléfono</label><input id="c-tel" type="tel" placeholder="Ej: 0987654321"></div>
+      <div class="fg"><label>Empresa / Negocio</label><input id="c-empresa" type="text" placeholder="Opcional"></div>
+      <div class="fg"><label>Ciudad</label><input id="c-ciudad" type="text" placeholder="Ej: Guayaquil"></div>
+    </div>
+    <div class="fcard">
+      <div class="fcard-title">🧑‍💼 Datos del Vendedor</div>
+      <div class="fg"><label>Nombre del vendedor *</label><input id="v-nombre" type="text" placeholder="Tu nombre completo"></div>
+      <div class="fg"><label>WhatsApp del vendedor *</label><input id="v-wsp" type="tel" placeholder="Ej: 0987654321"></div>
+    </div>
+    <button class="btn-go" onclick="genProforma()">📄 Generar Proforma →</button>
+  </div>
+</section>
+<section class="page" id="page-proforma">
+  <div class="pf-wrap"><div class="pf-doc" id="pf-doc"></div></div>
+  <div class="pf-actions">
+    <button class="btn-action btn-pdf" onclick="descargarPDF()">📥 Descargar PDF</button>
+    <button class="btn-action btn-wsp" onclick="enviarWhatsApp()">💬 Enviar por WhatsApp</button>
+    <button class="btn-action btn-new" onclick="nuevaCotizacion()">🔄 Nueva Cotización</button>
+  </div>
+</section>
+</main>
+<script>
+
+// ── DATA ───────────────────────────────────────────────────
+var PRODS = [{"codigo":"PROD-001","nombre":"MANGUERA H-POWER PARA VIBRADOR ENTRADA V38/6 MTS","categoria":"ACCESORIOS","marca":"MQP","pvp":110.0,"pvp_tarjeta":121.0,"comision":0.05,"usd_com":5.5},{"codigo":"PROD-002","nombre":"ROLLO DE MANGUERA 5 LONAS 120 BAR 100 M","categoria":"ACCESORIOS","marca":"MQP","pvp":102.69,"pvp_tarjeta":112.96,"comision":0.08,"usd_com":8.22},{"codigo":"PROD-003","nombre":"ROLLO DE MANGUERA 5 LONAS 120 BAR 50 M","categoria":"ACCESORIOS","marca":"MQP","pvp":60.0,"pvp_tarjeta":66.0,"comision":0.1,"usd_com":6.0},{"codigo":"PROD-004","nombre":"AEREADOR ELECTRICO 2 HP 4 PALETAS 220V.","categoria":"AEREADOR","marca":"MQP","pvp":650.0,"pvp_tarjeta":715.0,"comision":0.08,"usd_com":52.0},{"codigo":"PROD-005","nombre":"ASPERSOR DE RIEGO CON BASE SXG-526 360° - 2 BAR min / 4 BAR max","categoria":"ASPERSOR","marca":"MQP","pvp":4.0,"pvp_tarjeta":4.4,"comision":0.1,"usd_com":0.4},{"codigo":"PROD-006","nombre":"ASPERSOR DE RIEGO 1/2\"  SXG 525 360° - 2 BAR min / 4 BAR max","categoria":"ASPERSOR","marca":"MQP","pvp":3.0,"pvp_tarjeta":3.3,"comision":0.1,"usd_com":0.3},{"codigo":"PROD-007","nombre":"ATOMIZADORA MQP-420 CON IMPULSOR 14LTS 3.5HP","categoria":"ATOMIZADOR","marca":"MQP","pvp":280.0,"pvp_tarjeta":308.0,"comision":0.1,"usd_com":28.0},{"codigo":"PROD-008","nombre":"ATOMIZADOR 3WF 20LTS CON IMPULSOR 2.9HP","categoria":"ATOMIZADOR","marca":"MQP","pvp":250.0,"pvp_tarjeta":275.0,"comision":0.1,"usd_com":25.0},{"codigo":"PROD-009","nombre":"BOMBA DE AGUA (MQP-30I- 208-H) PREMIUM 195F 3\" (2600MSNM) A/E","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":1200.0,"pvp_tarjeta":1320.0,"comision":0.1,"usd_com":120.0},{"codigo":"PROD-010","nombre":"BOMBA CAUDAL MQP 4¨ 15HP GASOLINA 190F","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":400.0,"pvp_tarjeta":440.0,"comision":0.08,"usd_com":32.0},{"codigo":"PROD-011","nombre":"BOMBA DE AGUA ( MQP-30I 188) PREMIUM 186F 3\" A/M","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":750.0,"pvp_tarjeta":825.0,"comision":0.08,"usd_com":60.0},{"codigo":"PROD-012","nombre":"BOMBA DE AGUA (MQP-20I- 198-4) PREMIUM 186 2\" A/M","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":720.0,"pvp_tarjeta":792.0,"comision":0.05,"usd_com":36.0},{"codigo":"PROD-013","nombre":"BOMBA DE AGUA (MQP-20I- 208-6) PREMIUM 192F 2\" A/E","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":900.0,"pvp_tarjeta":990.0,"comision":0.05,"usd_com":45.0},{"codigo":"PROD-014","nombre":"BOMBA DE AGUA (MQP-30I- 208) PREMIUM 192F 3\" A/E","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":950.0,"pvp_tarjeta":1045.0,"comision":0.05,"usd_com":47.5},{"codigo":"PROD-015","nombre":"BOMBA DE AGUA ACERO INOXIDABLE ZELAN JS100 1 HP 1 PULG 110V","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":150.0,"pvp_tarjeta":165.0,"comision":0.05,"usd_com":7.5},{"codigo":"PROD-016","nombre":"BOMBA DE AGUA MQP 7,5HP 170F CO TURBINA 3 PULGADAS PARA SOLIDOS, LODOS","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":330.0,"pvp_tarjeta":363.0,"comision":0.08,"usd_com":26.4},{"codigo":"PROD-017","nombre":"BOMBA DE AGUA MQP ELECTRICA 2,2KW 3 PULGADAS 220V 60HZ","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":200.0,"pvp_tarjeta":220.0,"comision":0.05,"usd_com":10.0},{"codigo":"PROD-018","nombre":"BOMBA DE AGUA MQP PREMIUM 2V92FE 4X3-208- 10 IMPELLER","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":2600.0,"pvp_tarjeta":2860.0,"comision":0.05,"usd_com":130.0},{"codigo":"PROD-019","nombre":"BOMBA DE AGUA PERIFERICA ZELAN 1/2 HP 1 PULG 110V","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":40.0,"pvp_tarjeta":44.0,"comision":0.08,"usd_com":3.2},{"codigo":"PROD-020","nombre":"BOMBA DE AGUA PRESION 3\" 14HP DIESEL ENCENDIDO ELECTRICO Y MANUAL","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":750.0,"pvp_tarjeta":825.0,"comision":0.05,"usd_com":37.5},{"codigo":"PROD-021","nombre":"BOMBA DE AGUA TERMOPLASTICA 2\" GASOLINA","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":300.0,"pvp_tarjeta":330.0,"comision":0.05,"usd_com":15.0},{"codigo":"PROD-022","nombre":"BOMBA DE AGUA RIEGO ZELAN HFM/7B 4 HP 220V 3 PULG","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":340.0,"pvp_tarjeta":374.0,"comision":0.1,"usd_com":34.0},{"codigo":"PROD-023","nombre":"BOMBA DE AGUA RIEGO ZELAN HFM/5AM 2 HP 220V 2 PULG","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":225.0,"pvp_tarjeta":247.5,"comision":0.1,"usd_com":22.5},{"codigo":"PROD-024","nombre":"BOMBA DE AGUA CAUDAL 1\" 4 TIEMPOS 1.35 HP GX35","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":200.0,"pvp_tarjeta":220.0,"comision":0.08,"usd_com":16.0},{"codigo":"PROD-025","nombre":"BOMBA CAUDAL 3 PULG GASOLINA 168F","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":195.0,"pvp_tarjeta":214.5,"comision":0.08,"usd_com":15.6},{"codigo":"PROD-026","nombre":"BOMBA CAUDAL 2 PULG GASOLINA 168F","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":185.0,"pvp_tarjeta":203.5,"comision":0.08,"usd_com":14.8},{"codigo":"PROD-027","nombre":"BOMBA CAUDAL 1.5\" MOTOR 152F 2.5HP 4 TIEMPOS 97CC","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":180.0,"pvp_tarjeta":198.0,"comision":0.08,"usd_com":14.4},{"codigo":"PROD-028","nombre":"BOMBA DE AGUA CAUDAL 1\" 52CC 2,3HP MOTOR 2 TIEMPOS","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":180.0,"pvp_tarjeta":198.0,"comision":0.08,"usd_com":14.4},{"codigo":"PROD-029","nombre":"BOMBA DE AGUA JET100L ZELAN DE 1PULG  1 HP 110/220V","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":120.0,"pvp_tarjeta":132.0,"comision":0.08,"usd_com":9.6},{"codigo":"PROD-030","nombre":"BOMBA DE AGUA CENTRIFUGA CPM158 ZELAN 1 HP 1 PULG 110V","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":100.0,"pvp_tarjeta":110.0,"comision":0.05,"usd_com":5.0},{"codigo":"PROD-031","nombre":"BOMBA DE AGUA SUMERGIBLE ZELAN DFS-P400 110V 1/2 HP (8MTS DE CABLE - QMAX 120L/M)","categoria":"BOMBA DE AGUA","marca":"MQP","pvp":70.0,"pvp_tarjeta":77.0,"comision":0.08,"usd_com":5.6},{"codigo":"PROD-032","nombre":"BOMBA PRESION 3 PULG MQP PREMIUN IMPELLER 208 MM 190F GASOLINA","categoria":"BOMBA DE PRESION","marca":"MQP","pvp":588.0,"pvp_tarjeta":646.8,"comision":0.08,"usd_com":47.04},{"codigo":"PROD-033","nombre":"BOMBA PRESION 2 PULG MQP PREMIUN 170F GASOLINA","categoria":"BOMBA DE PRESION","marca":"MQP","pvp":320.0,"pvp_tarjeta":352.0,"comision":0.08,"usd_com":25.6},{"codigo":"PROD-034","nombre":"BOMBA PRESION MQP 3¨DIESEL 10HP 186F ENCENDIDO MANUAL","categoria":"BOMBA DE PRESION","marca":"MQP","pvp":600.0,"pvp_tarjeta":660.0,"comision":0.05,"usd_com":30.0},{"codigo":"PROD-035","nombre":"BOMBA PRESION MQP 7,5HP GASOLINA 2¨ 170F TCARACOL.","categoria":"BOMBA DE PRESION","marca":"MQP","pvp":220.0,"pvp_tarjeta":242.0,"comision":0.05,"usd_com":11.0},{"codigo":"PROD-036","nombre":"BOMBA SUMERGIBLE ZELAN 3SDM2/14 (3PULG), 3/4 HP,  CAJA DE CONTROL 17M CABLE 110V","categoria":"BOMBA DE PRESION","marca":"MQP","pvp":195.0,"pvp_tarjeta":214.5,"comision":0.08,"usd_com":15.6},{"codigo":"PROD-037","nombre":"BOMBA ELECTRICA MONOFÁSICA 220V 10HP PRESION 2 PULG 205X4MM","categoria":"BOMBA ELECTRICA","marca":"MQP","pvp":800.0,"pvp_tarjeta":880.0,"comision":0.05,"usd_com":40.0},{"codigo":"PROD-038","nombre":"BOMBA ESTACIONARIA 7,5 HP, CABEZAL MQP-45, PRESION DE TRABAJO 80 BAR, 100MTS MANGUERA","categoria":"BOMBA ESTACIONARIA","marca":"MQP","pvp":320.0,"pvp_tarjeta":352.0,"comision":0.05,"usd_com":16.0},{"codigo":"PROD-039","nombre":"BOMBA ESTACIONARIA GX35 50MTS","categoria":"BOMBA ESTACIONARIA","marca":"MQP","pvp":240.0,"pvp_tarjeta":264.0,"comision":0.05,"usd_com":12.0},{"codigo":"PROD-040","nombre":"BOMBA ESTACIONARIA 7.5,5 HP, CABEZAL MQP-45, PRESION DE TRABAJO 80 BAR, 100 MTS DE MANGUERA CON CARRETE","categoria":"BOMBA ESTACIONARIA","marca":"MQP","pvp":350.0,"pvp_tarjeta":385.0,"comision":0.05,"usd_com":17.5},{"codigo":"PROD-041","nombre":"BOMBA ESTACIONARIA ELECTRICA 2,2KW 110V 60HZ MQP30","categoria":"BOMBA ESTACIONARIA","marca":"MQP","pvp":390.0,"pvp_tarjeta":429.0,"comision":0.08,"usd_com":31.2},{"codigo":"PROD-042","nombre":"BOMBA SUMERGIBLE ZELAN 4SDM10/6 (2PULG), 2HP, CAJA DE CONTROL 17M CABLE 220V","categoria":"BOMBA SUMERGIBLE","marca":"MQP","pvp":298.0,"pvp_tarjeta":327.8,"comision":0.1,"usd_com":29.8},{"codigo":"PROD-043","nombre":"BOMBA SUMERGIBLE ZELAN 3SDM2/22 (3PULG), 1,5 HP, CAJA DE CONTROL 17M CABLE 220V","categoria":"BOMBA SUMERGIBLE","marca":"MQP","pvp":240.0,"pvp_tarjeta":264.0,"comision":0.08,"usd_com":19.2},{"codigo":"PROD-044","nombre":"BOMBA SUMERGIBLE ZELAN 4SDM10/8 (2PULG), 3HP, CAJA DE CONTROL 17M CABLE 220V","categoria":"BOMBA SUMERGIBLE","marca":"MQP","pvp":395.0,"pvp_tarjeta":434.5,"comision":0.1,"usd_com":39.5},{"codigo":"PROD-045","nombre":"BOMBA SUMERGIBLE ZELAN 3SDM2/18 (3PULG), 1HP, CAJA DE CONTROL 17M CABLE 110V","categoria":"BOMBA SUMERGIBLE","marca":"MQP","pvp":220.0,"pvp_tarjeta":242.0,"comision":0.08,"usd_com":17.6},{"codigo":"PROD-046","nombre":"BOMBA SUMERGIBLE ZELAN 3SDM2/27 (3PULG), 2 HP, CAJA DE CONTROL 17M CABLE 220V.","categoria":"BOMBA SUMERGIBLE","marca":"MQP","pvp":260.0,"pvp_tarjeta":286.0,"comision":0.05,"usd_com":13.0},{"codigo":"PROD-047","nombre":"BOMBA SUMERGIBLE ZELAN 4SDM2/5 (1.1/4PULG) 3/4HP CAJA DE CONTROL 17M CABLE 110V","categoria":"BOMBA SUMERGIBLE","marca":"MQP","pvp":260.0,"pvp_tarjeta":286.0,"comision":0.08,"usd_com":20.8},{"codigo":"PROD-048","nombre":"CABEZAL DE FUMIGACION MMQP-45 TRACCION DIRECTA","categoria":"CABEZAL DE FUMIGACION","marca":"MQP","pvp":180.0,"pvp_tarjeta":198.0,"comision":0.15,"usd_com":27.0},{"codigo":"PROD-049","nombre":"CABEZAL DE FUMIGACION MQP-30 CERAMICA","categoria":"CABEZAL DE FUMIGACION","marca":"MQP","pvp":140.0,"pvp_tarjeta":154.0,"comision":0.1,"usd_com":14.0},{"codigo":"PROD-050","nombre":"CABEZAL DE FUMIGACION MQP-30","categoria":"CABEZAL DE FUMIGACION","marca":"MQP","pvp":125.0,"pvp_tarjeta":137.5,"comision":0.1,"usd_com":12.5},{"codigo":"PROD-051","nombre":"CABEZAL DE FUMIGACION MQP22","categoria":"CABEZAL DE FUMIGACION","marca":"MQP","pvp":90.0,"pvp_tarjeta":99.0,"comision":0.05,"usd_com":4.5},{"codigo":"PROD-052","nombre":"APISONADORA H-POWER RM90HC MOTOR LONCIN 6,5 HP","categoria":"CONSTRUCCION","marca":"MQP","pvp":1250.0,"pvp_tarjeta":1375.0,"comision":0.05,"usd_com":62.5},{"codigo":"PROD-053","nombre":"ALISADORA DE CONCRETO S100 H-POWER DIAMETRO ALISADO 920MM MOTOR LONCIN 7 HP","categoria":"CONSTRUCCION","marca":"MQP","pvp":900.0,"pvp_tarjeta":990.0,"comision":0.05,"usd_com":45.0},{"codigo":"PROD-054","nombre":"APISONADORA H-POWER RH600 MOTOR HONDA GX160 5,5 HP","categoria":"CONSTRUCCION","marca":"MQP","pvp":1390.0,"pvp_tarjeta":1529.0,"comision":0.05,"usd_com":69.5},{"codigo":"PROD-055","nombre":"COMPACTADOR H-POWER C160 SRT (REVERSA) MOTOR RATO 7 HP","categoria":"CONSTRUCCION","marca":"MQP","pvp":1300.0,"pvp_tarjeta":1430.0,"comision":0.08,"usd_com":104.0},{"codigo":"PROD-056","nombre":"COMPACTADOR H-POWER C60KGS MOTOR RATO 7 HP","categoria":"CONSTRUCCION","marca":"MQP","pvp":600.0,"pvp_tarjeta":660.0,"comision":0.05,"usd_com":30.0},{"codigo":"PROD-057","nombre":"COMPACTADOR H-POWER C90KGS MOTOR RATO 7 HP","categoria":"CONSTRUCCION","marca":"MQP","pvp":720.0,"pvp_tarjeta":792.0,"comision":0.08,"usd_com":57.6},{"codigo":"PROD-058","nombre":"CORTADORA DE CONCRETO/ASFALTO H- POWER DISCO DE 20\" MOTOR RATO 15 HP","categoria":"CONSTRUCCION","marca":"MQP","pvp":1200.0,"pvp_tarjeta":1320.0,"comision":0.08,"usd_com":96.0},{"codigo":"PROD-059","nombre":"CORTADORA DE CESPED 20 160CC IP65 AUTOPROPULSADA","categoria":"CORTACESPED","marca":"MQP","pvp":400.0,"pvp_tarjeta":440.0,"comision":0.08,"usd_com":32.0},{"codigo":"PROD-060","nombre":"Oleo-Mac MAX 53 TK ALUMINIUM PRO","categoria":"CORTACESPED","marca":"Oleomac","pvp":1177.8,"pvp_tarjeta":1295.58,"comision":0.1,"usd_com":117.78},{"codigo":"PROD-061","nombre":"Oleo-Mac G53 TK All Road Plus 4","categoria":"CORTACESPED","marca":"Oleomac","pvp":840.2,"pvp_tarjeta":924.22,"comision":0.1,"usd_com":84.02},{"codigo":"PROD-062","nombre":"Oleo-Mac G53 TK Comfort Plus","categoria":"CORTACESPED","marca":"Oleomac","pvp":630.0,"pvp_tarjeta":693.0,"comision":0.1,"usd_com":63.0},{"codigo":"PROD-063","nombre":"Oleo-Mac G48 PK Comfort Plus","categoria":"CORTACESPED","marca":"Oleomac","pvp":490.0,"pvp_tarjeta":539.0,"comision":0.1,"usd_com":49.0},{"codigo":"PROD-064","nombre":"CORTADORA DE CESPED 4 EN 1 - 21 PULG 6 HP","categoria":"CORTACESPED","marca":"MQP","pvp":450.0,"pvp_tarjeta":495.0,"comision":0.08,"usd_com":36.0},{"codigo":"PROD-065","nombre":"EFCO DS 2410 HL","categoria":"CORTASETOS","marca":"Efco","pvp":755.0,"pvp_tarjeta":830.5,"comision":0.1,"usd_com":75.5},{"codigo":"PROD-066","nombre":"Oleo-Mac BC 241 H","categoria":"CORTASETOS","marca":"Oleomac","pvp":730.0,"pvp_tarjeta":803.0,"comision":0.1,"usd_com":73.0},{"codigo":"PROD-067","nombre":"CORTASETOS DOBLE 22,5CC","categoria":"CORTASETOS","marca":"MQP","pvp":280.0,"pvp_tarjeta":308.0,"comision":0.1,"usd_com":28.0},{"codigo":"PROD-068","nombre":"MOTOGUADAÑA MQP  4 TIEMPOS 1,7HP","categoria":"DESBROZADORA","marca":"MQP","pvp":290.0,"pvp_tarjeta":319.0,"comision":0.1,"usd_com":29.0},{"codigo":"PROD-069","nombre":"MOTOGUADAÑA CON RUEDAS 52CC ROJA MQP","categoria":"DESBROZADORA","marca":"MQP","pvp":250.0,"pvp_tarjeta":275.0,"comision":0.15,"usd_com":37.5},{"codigo":"PROD-070","nombre":"MOTOGUAÑA MQP  41,5CC 143R","categoria":"DESBROZADORA","marca":"MQP","pvp":250.0,"pvp_tarjeta":275.0,"comision":0.15,"usd_com":37.5},{"codigo":"PROD-071","nombre":"MOTOGUADAÑA MQP 35,8 CC 1,35 HP, 26 MM 4 TIEMPOS","categoria":"DESBROZADORA","marca":"MQP","pvp":240.0,"pvp_tarjeta":264.0,"comision":0.15,"usd_com":36.0},{"codigo":"PROD-072","nombre":"MOTOGUADAÑA MQP 541 TH.","categoria":"DESBROZADORA","marca":"MQP","pvp":240.0,"pvp_tarjeta":264.0,"comision":0.1,"usd_com":24.0},{"codigo":"PROD-073","nombre":"MULTISET MOCHILA 3 EN 1, 52CC 2,3 HP, PODADORA DE ALTURA, MOTOGUADAÑA Y CORTASETOS","categoria":"DESBROZADORA","marca":"MQP","pvp":320.0,"pvp_tarjeta":352.0,"comision":0.1,"usd_com":32.0},{"codigo":"PROD-074","nombre":"MOTOGUADAÑA MQP NEW 2.3HP 52CC","categoria":"DESBROZADORA","marca":"MQP","pvp":230.0,"pvp_tarjeta":253.0,"comision":0.1,"usd_com":23.0},{"codigo":"PROD-075","nombre":"MULTISET 2 EN 1, 52CC 2,3 HP. PODADORA DE ALTURA Y MOTOGUADAÑA","categoria":"DESBROZADORA","marca":"MQP","pvp":270.0,"pvp_tarjeta":297.0,"comision":0.1,"usd_com":27.0},{"codigo":"PROD-076","nombre":"MOTOGUADAÑA MQP  52 CC 2,3 HP 26MM 2 TIEMPOS","categoria":"DESBROZADORA","marca":"MQP","pvp":200.0,"pvp_tarjeta":220.0,"comision":0.1,"usd_com":20.0},{"codigo":"PROD-077","nombre":"MOTOGUADAÑA LIGERA 26CC 1HP","categoria":"DESBROZADORA","marca":"MQP","pvp":170.0,"pvp_tarjeta":187.0,"comision":0.1,"usd_com":17.0},{"codigo":"PROD-078","nombre":"MOTOGUADAÑA MQP 541","categoria":"DESBROZADORA","marca":"MQP","pvp":200.0,"pvp_tarjeta":220.0,"comision":0.08,"usd_com":16.0},{"codigo":"PROD-079","nombre":"MOTOGUADAÑA ELECTRICA CON RUEDAS","categoria":"DESBROZADORA","marca":"MQP","pvp":100.0,"pvp_tarjeta":110.0,"comision":0.05,"usd_com":5.0},{"codigo":"PROD-080","nombre":"MULTISET 3 EN  1, 52CC  2,3 HP. PODADORA DE ALTURA, MOTOGUADAÑA Y CORTASETOS.","categoria":"DESBROZADORA","marca":"MQP","pvp":290.0,"pvp_tarjeta":319.0,"comision":0.05,"usd_com":14.5},{"codigo":"PROD-081","nombre":"MOTOGUADAÑA ORIGINAL ROJA 52CC 2.3HP","categoria":"DESBROZADORA","marca":"MQP","pvp":130.0,"pvp_tarjeta":143.0,"comision":0.08,"usd_com":10.4},{"codigo":"PROD-082","nombre":"Oleo-Mac 753 T","categoria":"DESBROZADORA","marca":"Oleomac","pvp":760.0,"pvp_tarjeta":836.0,"comision":0.1,"usd_com":76.0},{"codigo":"PROD-083","nombre":"Oleo-Mac 746 T","categoria":"DESBROZADORA","marca":"Oleomac","pvp":715.0,"pvp_tarjeta":786.5,"comision":0.1,"usd_com":71.5},{"codigo":"PROD-084","nombre":"Oleo-Mac 741","categoria":"DESBROZADORA","marca":"Oleomac","pvp":560.0,"pvp_tarjeta":616.0,"comision":0.1,"usd_com":56.0},{"codigo":"PROD-085","nombre":"Oleo-Mac BCH 40","categoria":"DESBROZADORA","marca":"Oleomac","pvp":380.0,"pvp_tarjeta":418.0,"comision":0.08,"usd_com":30.4},{"codigo":"PROD-086","nombre":"ENSILADORA EP25 C/BASE DE MOTOR Y CUBRE BANDAS (INCLUYE MOTOR Y BANDAS)","categoria":"ENSILADORA","marca":"MQP","pvp":1980.0,"pvp_tarjeta":2178.0,"comision":0.05,"usd_com":99.0},{"codigo":"PROD-087","nombre":"ENSILADORA PP47 C/BASE DE MOTOR Y CUBRE BANDAS (INCLUYE MOTOR 190F MQP GASOLINA Y BANDAS)","categoria":"ENSILADORA","marca":"MQP","pvp":3700.0,"pvp_tarjeta":4070.0,"comision":0.05,"usd_com":185.0},{"codigo":"PROD-088","nombre":"EXTRACTOR HIDRAULICO DE ENGRANAJE (SANTIAGO) 10 TONELADAS","categoria":"EXTRACTOR HIDRAULICO ENGRANAJES","marca":"MQP","pvp":169.42,"pvp_tarjeta":186.36,"comision":0.08,"usd_com":13.55},{"codigo":"PROD-089","nombre":"EXTRACTOR HIDRAULICO ENGRANAJES (SANTIAGO) 5 TONELADAS","categoria":"EXTRACTOR HIDRAULICO ENGRANAJES","marca":"MQP","pvp":115.82,"pvp_tarjeta":127.4,"comision":0.08,"usd_com":9.27},{"codigo":"PROD-090","nombre":"FERTILIZADORA BATERIA DRENCH","categoria":"FERTILIZADORA","marca":"MQP","pvp":100.0,"pvp_tarjeta":110.0,"comision":0.05,"usd_com":5.0},{"codigo":"PROD-091","nombre":"MOCHILA FERTILIZADORA LINEA CONTINUA","categoria":"FERTILIZADORA","marca":"MQP","pvp":36.0,"pvp_tarjeta":39.6,"comision":0.05,"usd_com":1.8},{"codigo":"PROD-092","nombre":"MOCHILA FERTILIZADORA DE INYECCION MQP TANQUE AZUL BRAZO NARANJA","categoria":"FERTILIZADORA","marca":"MQP","pvp":50.0,"pvp_tarjeta":55.0,"comision":0.08,"usd_com":4.0},{"codigo":"PROD-093","nombre":"MOTOR FUERA DE BORDA 2,3 HP 52 CC","categoria":"FUERA DE BORDA","marca":"MQP","pvp":250.0,"pvp_tarjeta":275.0,"comision":0.1,"usd_com":25.0},{"codigo":"PROD-094","nombre":"MOTOR FUERA DE BORDA 4 OHV 144F 51,7CC","categoria":"FUERA DE BORDA","marca":"MQP","pvp":360.0,"pvp_tarjeta":396.0,"comision":0.08,"usd_com":28.8},{"codigo":"PROD-095","nombre":"PULVERIZADORA GX35 4T 25L (SBF)","categoria":"FUMIGADORA","marca":"MQP","pvp":230.0,"pvp_tarjeta":253.0,"comision":0.1,"usd_com":23.0},{"codigo":"PROD-096","nombre":"PULVERIZADORA 2 TIEMPOS TU-26 SISTEMA DE FUMIGACION DE BRONCE","categoria":"FUMIGADORA","marca":"MQP","pvp":180.0,"pvp_tarjeta":198.0,"comision":0.1,"usd_com":18.0},{"codigo":"PROD-097","nombre":"PULVERIZADORA 4 TIEMPOS MOTOR GX-35 SISTEMA DE FUMIGACION DE BRONCE","categoria":"FUMIGADORA","marca":"MQP","pvp":220.0,"pvp_tarjeta":242.0,"comision":0.08,"usd_com":17.6},{"codigo":"PROD-098","nombre":"PULVERIZADORA TU-26 2T 25L (SFB)","categoria":"FUMIGADORA","marca":"MQP","pvp":150.0,"pvp_tarjeta":165.0,"comision":0.1,"usd_com":15.0},{"codigo":"PROD-099","nombre":"MOCHILA FUMIGADORA MANUAL MQP AZUL 20LTS","categoria":"FUMIGADORA","marca":"MQP","pvp":20.0,"pvp_tarjeta":22.0,"comision":0.08,"usd_com":1.6},{"codigo":"PROD-100","nombre":"MOCHILA FUMIGADORA MANUAL MQP PREMIUM 20L","categoria":"FUMIGADORA","marca":"MQP","pvp":30.0,"pvp_tarjeta":33.0,"comision":0.1,"usd_com":3.0},{"codigo":"PROD-101","nombre":"FUMIGADORA MANUAL AMARILLA 20L LANZA DE ACERO","categoria":"FUMIGADORA","marca":"MQP","pvp":25.0,"pvp_tarjeta":27.5,"comision":0.1,"usd_com":2.5},{"codigo":"PROD-102","nombre":"MOCHILA FUMIGADORA MANUAL TIPO JACTO 20L","categoria":"FUMIGADORA","marca":"MQP","pvp":60.0,"pvp_tarjeta":66.0,"comision":0.08,"usd_com":4.8},{"codigo":"PROD-103","nombre":"MOCHILA FUMIGADORA 2EN1 , ELECTRICA Y MANUAL. 5 HORAS DE TRABAJO CONTINUA CAPACIDAD 20LTS","categoria":"FUMIGADORA","marca":"MQP","pvp":60.0,"pvp_tarjeta":66.0,"comision":0.08,"usd_com":4.8},{"codigo":"PROD-104","nombre":"Oleo-Mac AM 163","categoria":"FUMIGADORA","marca":"Oleomac","pvp":730.0,"pvp_tarjeta":803.0,"comision":0.1,"usd_com":73.0},{"codigo":"PROD-105","nombre":"GENERADOR KAMA ATS DIESEL 14T A/E CON MOTOR KM292FE 20HP","categoria":"GENERADOR","marca":"MQP","pvp":4600.0,"pvp_tarjeta":5060.0,"comision":0.05,"usd_com":230.0},{"codigo":"PROD-106","nombre":"GENERADOR KAMA ATS DIESEL 8800  CABINADO 110/220V A7E C/R, MOTOR 195F","categoria":"GENERADOR","marca":"MQP","pvp":1800.0,"pvp_tarjeta":1980.0,"comision":0.08,"usd_com":144.0},{"codigo":"PROD-107","nombre":"GENERADOR KAMA DIESEL 6500 110/220V, A/E, C/R MOTOR 186F","categoria":"GENERADOR","marca":"MQP","pvp":1100.0,"pvp_tarjeta":1210.0,"comision":0.05,"usd_com":55.0},{"codigo":"PROD-108","nombre":"GENERADOR MQP HP15000LN DIESEL SILENCIOSO CON ATS.","categoria":"GENERADOR","marca":"MQP","pvp":5500.0,"pvp_tarjeta":6050.0,"comision":0.1,"usd_com":550.0},{"codigo":"PROD-109","nombre":"GENERADOR HONDA GASOLINA GX390 5,5KW","categoria":"GENERADOR","marca":"MQP","pvp":1900.0,"pvp_tarjeta":2090.0,"comision":0.1,"usd_com":190.0},{"codigo":"PROD-110","nombre":"GENERADOR GASOLINA MQP 3500  170F  A/E, C/R","categoria":"GENERADOR","marca":"MQP","pvp":480.0,"pvp_tarjeta":528.0,"comision":0.08,"usd_com":38.4},{"codigo":"PROD-111","nombre":"GENERADOR PREMIUM 5500 MOTOR 188F A/E C/R","categoria":"GENERADOR","marca":"MQP","pvp":799.25,"pvp_tarjeta":879.18,"comision":0.05,"usd_com":39.96},{"codigo":"PROD-112","nombre":"GENERADOR GASOLINA ,3800 2,8KW CON E/E","categoria":"GENERADOR","marca":"MQP","pvp":420.0,"pvp_tarjeta":462.0,"comision":0.08,"usd_com":33.6},{"codigo":"PROD-113","nombre":"HIDROLAVADORA GASOLINA 170F HPW180A C/R","categoria":"HIDROLAVADORA","marca":"MQP","pvp":490.0,"pvp_tarjeta":539.0,"comision":0.1,"usd_com":49.0},{"codigo":"PROD-114","nombre":"HIDROLAVADORA GASOLINA 190F HPW250A E/E C/R.","categoria":"HIDROLAVADORA","marca":"MQP","pvp":1000.0,"pvp_tarjeta":1100.0,"comision":0.05,"usd_com":50.0},{"codigo":"PROD-115","nombre":"HOYADORA PROFESIONAL C/R  52CC 2.3HP CON BROCA REFORZADA 20CM","categoria":"HOYADORA","marca":"MQP","pvp":300.0,"pvp_tarjeta":330.0,"comision":0.1,"usd_com":30.0},{"codigo":"PROD-116","nombre":"HOYADORA MQP PREMIUM 52CC 2,3HP BROCA DE 20CM","categoria":"HOYADORA","marca":"MQP","pvp":250.0,"pvp_tarjeta":275.0,"comision":0.08,"usd_com":20.0},{"codigo":"PROD-117","nombre":"HOYADORA MQP PREMIUM 52CC 2,3HP BROCA DE 15CM","categoria":"HOYADORA","marca":"MQP","pvp":240.0,"pvp_tarjeta":264.0,"comision":0.1,"usd_com":24.0},{"codigo":"PROD-118","nombre":"HOYADORA MQP 52CC 2.3 HP BROCA 20CMS GZ","categoria":"HOYADORA","marca":"MQP","pvp":198.0,"pvp_tarjeta":217.8,"comision":0.08,"usd_com":15.84},{"codigo":"PROD-119","nombre":"HOYADORA MQP 52CC 2.3HP BROCA 15CMS","categoria":"HOYADORA","marca":"MQP","pvp":188.0,"pvp_tarjeta":206.8,"comision":0.08,"usd_com":15.04},{"codigo":"PROD-120","nombre":"MANGUERA PARA JARDIN 20 MTS (ACOPLE RAPIDO)","categoria":"MANGUERA","marca":"MQP","pvp":12.0,"pvp_tarjeta":13.2,"comision":0.05,"usd_com":0.6},{"codigo":"PROD-121","nombre":"MOLINO  DE ALIMENTOS CON MOTOR ELECTRICO 220V 60HZ SOLO PARA GRANOS SECOS EQUIPOS CON 2 MALLAS 280KG/H","categoria":"MOLINO","marca":"MQP","pvp":600.0,"pvp_tarjeta":660.0,"comision":0.08,"usd_com":48.0},{"codigo":"PROD-122","nombre":"MOLINO DE GRANOS HUMEDOS ELECTRICO 110V","categoria":"MOLINO","marca":"MQP","pvp":400.0,"pvp_tarjeta":440.0,"comision":0.08,"usd_com":32.0},{"codigo":"PROD-123","nombre":"MOLINO DE ALIMENTOS ACERO INOXIDABLE CON MOTOR ELECTRICO 220V 60HZ 250KG/H","categoria":"MOLINO","marca":"MQP","pvp":790.0,"pvp_tarjeta":869.0,"comision":0.08,"usd_com":63.2},{"codigo":"PROD-124","nombre":"MOLINO DE ALIMENTOS ACERO INOXIDABLE MOTOR GASOLINA 7.5HP 170F 250KG/H","categoria":"MOLINO","marca":"MQP","pvp":720.0,"pvp_tarjeta":792.0,"comision":0.08,"usd_com":57.6},{"codigo":"PROD-125","nombre":"MOLINO PICADOR PD SOBRINO C/BASE DE MOTOR Y CUBRE BANDAS (INCLUYE MOTOR 170F MQP Y BANDAS)","categoria":"MOLINO","marca":"MQP","pvp":1200.0,"pvp_tarjeta":1320.0,"comision":0.08,"usd_com":96.0},{"codigo":"PROD-126","nombre":"MOLINO PICADOR PD2 C/BASE DE MOTOR Y CUBRE BANDAS (INCLUYE MOTOR 190F MQP GASOLINA Y BANDAS)","categoria":"MOLINO","marca":"MQP","pvp":2000.0,"pvp_tarjeta":2200.0,"comision":0.05,"usd_com":100.0},{"codigo":"PROD-127","nombre":"MOLINO-PICADORA 2 EN 1 CON MOTOR 13HP 188F C/R A/M","categoria":"MOLINO","marca":"MQP","pvp":950.0,"pvp_tarjeta":1045.0,"comision":0.05,"usd_com":47.5},{"codigo":"PROD-128","nombre":"MOLINO DE GRANOS HUMEDOS ALUMINIO/PIEDRA 0,8HP M140","categoria":"MOLINO","marca":"MQP","pvp":260.0,"pvp_tarjeta":286.0,"comision":0.05,"usd_com":13.0},{"codigo":"PROD-129","nombre":"MOTOAZADA CAMADORA DIESEL 180F 8HP","categoria":"MOTOAZADA","marca":"MQP","pvp":800.0,"pvp_tarjeta":880.0,"comision":0.1,"usd_com":80.0},{"codigo":"PROD-130","nombre":"MOTOAZADA MQP HT135FE DIESEL 186F A/E. ROTAVATOR - RUEDAS NEUMATICAS - APORCADOR","categoria":"MOTOAZADA","marca":"MQP","pvp":1300.0,"pvp_tarjeta":1430.0,"comision":0.05,"usd_com":65.0},{"codigo":"PROD-131","nombre":"MOTOAZADA MQP HT900A GASOLINA 170F ROTAVATOR - RUEDAS NEUMATICAS - APORCADOR","categoria":"MOTOAZADA","marca":"MQP","pvp":620.0,"pvp_tarjeta":682.0,"comision":0.08,"usd_com":49.6},{"codigo":"PROD-132","nombre":"MOTOBOMBA DIESEL DS 4 PULG A/E, C/R SOLIDOS","categoria":"MOTOBOMBA","marca":"MQP","pvp":1960.0,"pvp_tarjeta":2156.0,"comision":0.1,"usd_com":196.0},{"codigo":"PROD-133","nombre":"MOTOBOMBA DIESEL KAMA PRESION 3 PULG. A/E, C/R MOTOR 195F","categoria":"MOTOBOMBA","marca":"MQP","pvp":1100.0,"pvp_tarjeta":1210.0,"comision":0.08,"usd_com":88.0},{"codigo":"PROD-134","nombre":"MOTOBOMBA DIESEL KAMA PRESION 2 PULG , A/M, C/R MOTOR 186F","categoria":"MOTOBOMBA","marca":"MQP","pvp":800.0,"pvp_tarjeta":880.0,"comision":0.05,"usd_com":40.0},{"codigo":"PROD-135","nombre":"MOTOBOMBA DIESEL KAMA PRESION 3'' A/M C/R MOTOR 192F","categoria":"MOTOBOMBA","marca":"MQP","pvp":950.0,"pvp_tarjeta":1045.0,"comision":0.05,"usd_com":47.5},{"codigo":"PROD-136","nombre":"MOTOBOMBA DIESEL KAMA PRESION 3 PULG A/E, C/R MOTOR 192F","categoria":"MOTOBOMBA","marca":"MQP","pvp":1000.0,"pvp_tarjeta":1100.0,"comision":0.05,"usd_com":50.0},{"codigo":"PROD-137","nombre":"MOTOR GASOLINA MQP 192F 16HP CON ROSCA Y CUÑA","categoria":"MOTOR","marca":"MQP","pvp":375.0,"pvp_tarjeta":412.5,"comision":0.1,"usd_com":37.5},{"codigo":"PROD-138","nombre":"MOTOR GASOLINA MQP 190F (GX420) 15HP CON CUÑA","categoria":"MOTOR","marca":"MQP","pvp":345.0,"pvp_tarjeta":379.5,"comision":0.1,"usd_com":34.5},{"codigo":"PROD-139","nombre":"MOTOR MQP PREMIUN 195FE A/E CON ROSCA Y CUÑA.","categoria":"MOTOR","marca":"MQP","pvp":680.01,"pvp_tarjeta":748.01,"comision":0.05,"usd_com":34.0},{"codigo":"PROD-140","nombre":"MOTOR VERTICAL 4OHV 144F","categoria":"MOTOR","marca":"MQP","pvp":205.36,"pvp_tarjeta":225.9,"comision":0.05,"usd_com":10.27},{"codigo":"PROD-141","nombre":"MOTOR DE MOTOGUADAÑA 52CC GEZHI","categoria":"MOTOR","marca":"MQP","pvp":128.35,"pvp_tarjeta":141.18,"comision":0.08,"usd_com":10.27},{"codigo":"PROD-142","nombre":"MOTOR TU-26 2 TIEMPOS 26CC","categoria":"MOTOR","marca":"MQP","pvp":105.0,"pvp_tarjeta":115.5,"comision":0.08,"usd_com":8.4},{"codigo":"PROD-143","nombre":"MOTOR DE MOTOGUADAÑA 4 T GX35 GEZHI","categoria":"MOTOR","marca":"MQP","pvp":125.0,"pvp_tarjeta":137.5,"comision":0.05,"usd_com":6.25},{"codigo":"PROD-144","nombre":"MOTOR DIESEL KAMA 192F CUÑA Y ROSCA A/M","categoria":"MOTOR DIESEL","marca":"MQP","pvp":750.0,"pvp_tarjeta":825.0,"comision":0.1,"usd_com":75.0},{"codigo":"PROD-145","nombre":"I. MOTOR DIESEL KAMA 192FE CUÑA Y ROSCA A/E","categoria":"MOTOR DIESEL","marca":"MQP","pvp":850.0,"pvp_tarjeta":935.0,"comision":0.08,"usd_com":68.0},{"codigo":"PROD-146","nombre":"I. MOTOR DIESEL KAMA 195FE CUÑA Y ROSCA A/E","categoria":"MOTOR DIESEL","marca":"MQP","pvp":880.0,"pvp_tarjeta":968.0,"comision":0.08,"usd_com":70.4},{"codigo":"PROD-147","nombre":"I. MOTOR DIESEL MQP 186F A/M CON ROSCA Y CUÑA","categoria":"MOTOR DIESEL","marca":"MQP","pvp":489.99,"pvp_tarjeta":538.99,"comision":0.05,"usd_com":24.5},{"codigo":"PROD-148","nombre":"I. MOTOR DIESEL MQP 192F A/M CON ROSCA Y CUÑA","categoria":"MOTOR DIESEL","marca":"MQP","pvp":530.0,"pvp_tarjeta":583.0,"comision":0.05,"usd_com":26.5},{"codigo":"PROD-149","nombre":"MOTOR DIESEL 2V92FE 22HP A/E CUNA","categoria":"MOTOR DIESEL","marca":"MQP","pvp":2100.0,"pvp_tarjeta":2310.0,"comision":0.05,"usd_com":105.0},{"codigo":"PROD-150","nombre":"MOTOR DIESEL 2V92FE 22HP A/E ROSCA Y CUNA","categoria":"MOTOR DIESEL","marca":"MQP","pvp":2110.0,"pvp_tarjeta":2321.0,"comision":0.05,"usd_com":105.5},{"codigo":"PROD-151","nombre":"MOTOR DIESEL KAMA 178F CUÑA Y ROSCA A/M","categoria":"MOTOR DIESEL","marca":"MQP","pvp":500.0,"pvp_tarjeta":550.0,"comision":0.05,"usd_com":25.0},{"codigo":"PROD-152","nombre":"I. MOTOR DIESEL MQP 192FE A/E  CON ROSCA Y CUÑA","categoria":"MOTOR GASOLINA","marca":"MQP","pvp":620.0,"pvp_tarjeta":682.0,"comision":0.05,"usd_com":31.0},{"codigo":"PROD-153","nombre":"I. MOTOR GASOLINA VERTICAL 608CC LONCIN IP96F PARA TRACTOR CORTACESPED","categoria":"MOTOR GASOLINA","marca":"MQP","pvp":950.0,"pvp_tarjeta":1045.0,"comision":0.05,"usd_com":47.5},{"codigo":"PROD-154","nombre":"I. MOTOR GASOLINA MQP 188F (GX390) 13HP CON CUÑA Y ROSCA.","categoria":"MOTOR GASOLINA","marca":"MQP","pvp":320.0,"pvp_tarjeta":352.0,"comision":0.05,"usd_com":16.0},{"codigo":"PROD-155","nombre":"I. MOTOR GASOLINA MQP 7HP 170F CON CUÑA","categoria":"MOTOR GASOLINA","marca":"MQP","pvp":190.0,"pvp_tarjeta":209.0,"comision":0.08,"usd_com":15.2},{"codigo":"PROD-156","nombre":"I. MOTOR GASOLINA VERTICAL 160CC  IP65","categoria":"MOTOR GASOLINA","marca":"MQP","pvp":210.0,"pvp_tarjeta":231.0,"comision":0.05,"usd_com":10.5},{"codigo":"PROD-157","nombre":"MOTOSIERRA 58CC ESPADA DE 24\" 3/8\" PUNTA ACERADA PREMIUM","categoria":"MOTOSIERRA","marca":"MQP","pvp":240.0,"pvp_tarjeta":264.0,"comision":0.15,"usd_com":36.0},{"codigo":"PROD-158","nombre":"MOTOSIERRA 58 CC 2,95 HP 24 PULGADAS 3/8","categoria":"MOTOSIERRA","marca":"MQP","pvp":220.0,"pvp_tarjeta":242.0,"comision":0.1,"usd_com":22.0},{"codigo":"PROD-159","nombre":"MOTOSIERRA DE PODA 12 PUL 3/8 0,050","categoria":"MOTOSIERRA","marca":"MQP","pvp":180.0,"pvp_tarjeta":198.0,"comision":0.1,"usd_com":18.0},{"codigo":"PROD-160","nombre":"MOTOSIERRA 52 CC 2,8 HP 22 PULGADAS 3/8","categoria":"MOTOSIERRA","marca":"MQP","pvp":180.0,"pvp_tarjeta":198.0,"comision":0.08,"usd_com":14.4},{"codigo":"PROD-161","nombre":"MOTOSIERRA 58CC 20 \" 3/8","categoria":"MOTOSIERRA","marca":"MQP","pvp":170.0,"pvp_tarjeta":187.0,"comision":0.08,"usd_com":13.6},{"codigo":"PROD-162","nombre":"I. MOTOSIERRA TCS2511 12 PULG 3/8 0.050","categoria":"MOTOSIERRA","marca":"MQP","pvp":140.0,"pvp_tarjeta":154.0,"comision":0.08,"usd_com":11.2},{"codigo":"PROD-163","nombre":"Oleo-Mac GS 650","categoria":"MOTOSIERRA","marca":"Oleomac","pvp":845.2,"pvp_tarjeta":929.72,"comision":0.1,"usd_com":84.52},{"codigo":"PROD-164","nombre":"Oleo-Mac GS 44","categoria":"MOTOSIERRA","marca":"Oleomac","pvp":473.18,"pvp_tarjeta":520.5,"comision":0.1,"usd_com":47.32},{"codigo":"PROD-165","nombre":"Oleo-Mac GSH 40","categoria":"MOTOSIERRA","marca":"Oleomac","pvp":240.0,"pvp_tarjeta":264.0,"comision":0.05,"usd_com":12.0},{"codigo":"PROD-166","nombre":"PELADORA DE PAPA ELECTRICA DE 15 L. 110V 60HZ","categoria":"PELADORA","marca":"MQP","pvp":800.0,"pvp_tarjeta":880.0,"comision":0.05,"usd_com":40.0},{"codigo":"PROD-167","nombre":"PICADORA TRITURADORA 4TXH MQP 7,5HP 170F","categoria":"PICADORA","marca":"MQP","pvp":1060.0,"pvp_tarjeta":1166.0,"comision":0.1,"usd_com":106.0},{"codigo":"PROD-168","nombre":"PICADORA  MQP VERTICAL CON MOTOR 7,5HP  170F (VERDE)","categoria":"PICADORA","marca":"MQP","pvp":780.0,"pvp_tarjeta":858.0,"comision":0.08,"usd_com":62.4},{"codigo":"PROD-169","nombre":"PICADORA DE FORRAJE AUTOALIMENTACION MOTOR GASOLINA 7.5HP 170F 1500KG/H","categoria":"PICADORA","marca":"MQP","pvp":850.0,"pvp_tarjeta":935.0,"comision":0.08,"usd_com":68.0},{"codigo":"PROD-170","nombre":"PICADORA DE FORRAJE AUTOALIMENTADA 9Z-2.6G MOTOR 170F","categoria":"PICADORA","marca":"MQP","pvp":700.0,"pvp_tarjeta":770.0,"comision":0.08,"usd_com":56.0},{"codigo":"PROD-171","nombre":"PICADORA DE FORRAJE MOTOR GASOLINA 13 HP 9Z 4.8SS PRO","categoria":"PICADORA","marca":"MQP","pvp":1200.0,"pvp_tarjeta":1320.0,"comision":0.08,"usd_com":96.0},{"codigo":"PROD-172","nombre":"PILADORA DE ARROZ CON MOTOR  7,5HP 170F","categoria":"PILADORA","marca":"MQP","pvp":580.0,"pvp_tarjeta":638.0,"comision":0.08,"usd_com":46.4},{"codigo":"PROD-173","nombre":"PILADORA DE ARROZ CON MOTOR DIESEL 14HP 192F","categoria":"PILADORA","marca":"MQP","pvp":2200.0,"pvp_tarjeta":2420.0,"comision":0.05,"usd_com":110.0},{"codigo":"PROD-174","nombre":"PILADORA DE ARROZ GASOLINA 16HP","categoria":"PILADORA","marca":"MQP","pvp":1000.0,"pvp_tarjeta":1100.0,"comision":0.08,"usd_com":80.0},{"codigo":"PROD-175","nombre":"PODADORA DE ALTURA 1HP EXTENDIBLE 2.8M A 4M","categoria":"PODADORA DE ALTURA","marca":"MQP","pvp":420.0,"pvp_tarjeta":462.0,"comision":0.08,"usd_com":33.6},{"codigo":"PROD-176","nombre":"I. PODADOR DE RAMAS ALTAS TELESCOPICO 3M","categoria":"PODADORA DE ALTURA","marca":"MQP","pvp":35.94,"pvp_tarjeta":39.53,"comision":0.05,"usd_com":1.8},{"codigo":"PROD-177","nombre":"PULVERIZADOR ALIMENTO CON MOTOR 7,5HP 170F PARA HACER MASA","categoria":"PULVERIZADOR ALIMENTO","marca":"MQP","pvp":400.0,"pvp_tarjeta":440.0,"comision":0.08,"usd_com":32.0},{"codigo":"PROD-178","nombre":"PULVERIZADOR DE ALIMENTOS CON MOTOR ELECTRICO 60HZ 220V 2.4HP PARA HACER MASA","categoria":"PULVERIZADOR ALIMENTO","marca":"MQP","pvp":500.0,"pvp_tarjeta":550.0,"comision":0.08,"usd_com":40.0},{"codigo":"PROD-179","nombre":"I. RASTRILLO DE HOJAS PLASTICO (60 CM)","categoria":"RASTRILLO","marca":"MQP","pvp":4.0,"pvp_tarjeta":4.4,"comision":0.08,"usd_com":0.32},{"codigo":"PROD-180","nombre":"I. RASTRILLO DE HOJAS PLASTICO (60CM) CON EXTENCION","categoria":"RASTRILLO","marca":"MQP","pvp":14.0,"pvp_tarjeta":15.4,"comision":0.08,"usd_com":1.12},{"codigo":"PROD-181","nombre":"RECOLECTOR DE FRUTAS","categoria":"RECOLECTOR","marca":"MQP","pvp":10.0,"pvp_tarjeta":11.0,"comision":0.1,"usd_com":1.0},{"codigo":"PROD-182","nombre":"REMOLQUE PARA MOTOAZADA HT","categoria":"REMOLQUE","marca":"MQP","pvp":791.3,"pvp_tarjeta":870.43,"comision":0.1,"usd_com":79.13},{"codigo":"PROD-183","nombre":"RODILLO COMPACTADOR H- POWER MOTOR DIESEL 9 HP","categoria":"RODILLO","marca":"MQP","pvp":7000.0,"pvp_tarjeta":7700.0,"comision":0.05,"usd_com":350.0},{"codigo":"PROD-184","nombre":"SEMBRADORA DE GRANOS 10CM (16 PICOS)","categoria":"SEMBRADORA","marca":"MQP","pvp":130.0,"pvp_tarjeta":143.0,"comision":0.1,"usd_com":13.0},{"codigo":"PROD-185","nombre":"SEMBRADORA DE TABACO","categoria":"SEMBRADORA","marca":"MQP","pvp":130.0,"pvp_tarjeta":143.0,"comision":0.1,"usd_com":13.0},{"codigo":"PROD-186","nombre":"SUPER ESPEQUE SIMPLE","categoria":"SEMBRADORA","marca":"MQP","pvp":35.0,"pvp_tarjeta":38.5,"comision":0.08,"usd_com":2.8},{"codigo":"PROD-187","nombre":"SUPER ESPEQUE DOBLE SIEMBRA Y FERTILIZA","categoria":"SEMBRADORA","marca":"MQP","pvp":40.0,"pvp_tarjeta":44.0,"comision":0.08,"usd_com":3.2},{"codigo":"PROD-188","nombre":"I. SERRUCHO PODADOR PARA EXTENSION M. METALICO MQP","categoria":"SERRUCHO PODADOR","marca":"MQP","pvp":15.4,"pvp_tarjeta":16.94,"comision":0.08,"usd_com":1.23},{"codigo":"PROD-189","nombre":"BV163","categoria":"SOPLADORA","marca":"Oleomac","pvp":665.0,"pvp_tarjeta":731.5,"comision":0.1,"usd_com":66.5},{"codigo":"PROD-190","nombre":"BV250","categoria":"SOPLADORA","marca":"Oleomac","pvp":329.38,"pvp_tarjeta":362.32,"comision":0.05,"usd_com":16.47},{"codigo":"PROD-191","nombre":"I. SOPLADORA 26CC MOTOR 2T","categoria":"SOPLADORA","marca":"MQP","pvp":150.0,"pvp_tarjeta":165.0,"comision":0.08,"usd_com":12.0},{"codigo":"PROD-192","nombre":"SURCADOR PARA TRACTOR AGRICOLA (E011)","categoria":"SURCADOR","marca":"MQP","pvp":100.0,"pvp_tarjeta":110.0,"comision":0.1,"usd_com":10.0},{"codigo":"PROD-193","nombre":"TAKA TAKA DOBLE SIEMBRA Y FERTILIZA","categoria":"TAKA TAKA","marca":"MQP","pvp":190.0,"pvp_tarjeta":209.0,"comision":0.08,"usd_com":15.2},{"codigo":"PROD-194","nombre":"TAKA TAKA SIMPLE 17CM (8 PICOS)","categoria":"TAKA TAKA","marca":"MQP","pvp":125.0,"pvp_tarjeta":137.5,"comision":0.1,"usd_com":12.5},{"codigo":"PROD-195","nombre":"TAKA TAKA SIMPLE 20CM (7 PICOS)","categoria":"TAKA TAKA","marca":"MQP","pvp":125.0,"pvp_tarjeta":137.5,"comision":0.1,"usd_com":12.5},{"codigo":"PROD-196","nombre":"TAKA TAKA SIMPLE 25CM (6 PICOS)","categoria":"TAKA TAKA","marca":"MQP","pvp":125.0,"pvp_tarjeta":137.5,"comision":0.1,"usd_com":12.5},{"codigo":"PROD-197","nombre":"TIJERA DE PODA AGRICOLA MQP","categoria":"TIJERA","marca":"MQP","pvp":10.27,"pvp_tarjeta":11.3,"comision":0.1,"usd_com":1.03},{"codigo":"PROD-198","nombre":"I. TIJERA CORTASETOS","categoria":"TIJERA","marca":"MQP","pvp":20.54,"pvp_tarjeta":22.59,"comision":0.1,"usd_com":2.05},{"codigo":"PROD-199","nombre":"TIJERA DE INGERTO PARA FRUTALES","categoria":"TIJERA","marca":"MQP","pvp":20.0,"pvp_tarjeta":22.0,"comision":0.05,"usd_com":1.0},{"codigo":"PROD-200","nombre":"TRACTOR AGRICOLA 4X4 DIESEL 192F ARTICULADO","categoria":"TRACTOR","marca":"MQP","pvp":2600.0,"pvp_tarjeta":2860.0,"comision":0.08,"usd_com":208.0},{"codigo":"PROD-201","nombre":"TRACTOR CORTACESPED 42\" 608CC GASOLINA","categoria":"TRACTOR","marca":"MQP","pvp":2850.0,"pvp_tarjeta":3135.0,"comision":0.05,"usd_com":142.5},{"codigo":"PROD-202","nombre":"OM-102R/16K TRACTOR OLEO MAC 40″ – 16HP – HYDRO CON RECOLECTOR","categoria":"TRACTOR","marca":"Oleomac","pvp":4180.0,"pvp_tarjeta":4598.0,"comision":0.1,"usd_com":418.0},{"codigo":"PROD-203","nombre":"OM-109/16K TRACTOR OLEO MAC 42″ 16HP – HYDRO","categoria":"TRACTOR","marca":"Oleomac","pvp":3630.0,"pvp_tarjeta":3993.0,"comision":0.1,"usd_com":363.0},{"codigo":"PROD-204","nombre":"TRANSPLANTADORA","categoria":"TRANSPLANTADORA","marca":"MQP","pvp":35.0,"pvp_tarjeta":38.5,"comision":0.1,"usd_com":3.5},{"codigo":"PROD-205","nombre":"TRAPICHE ELECTRICO Y PELADOR DE CAÑA ACERO INOXIDABLE 220V 60HZ","categoria":"TRAPICHE","marca":"MQP","pvp":600.0,"pvp_tarjeta":660.0,"comision":0.05,"usd_com":30.0},{"codigo":"PROD-206","nombre":"TRAPICHE MANUAL PARA CAÑA DE AZUCAR, ACERO INOXIDABLE.","categoria":"TRAPICHE","marca":"MQP","pvp":380.0,"pvp_tarjeta":418.0,"comision":0.08,"usd_com":30.4},{"codigo":"PROD-207","nombre":"TRAPICHE ELECTRICO PARA CAÑA DE AZUCAR, ACERO INOXIDABLE. 220V 60HZ.","categoria":"TRAPICHE","marca":"MQP","pvp":720.0,"pvp_tarjeta":792.0,"comision":0.05,"usd_com":36.0},{"codigo":"PROD-208","nombre":"TRILLADORA DE GRANOS (AZUL)","categoria":"TRILLADORA","marca":"MQP","pvp":450.0,"pvp_tarjeta":495.0,"comision":0.1,"usd_com":45.0},{"codigo":"PROD-209","nombre":"TRITURADORA HTC03D DIESEL MQP PREMIUM 192FE","categoria":"TRITURADORA","marca":"MQP","pvp":2100.0,"pvp_tarjeta":2310.0,"comision":0.1,"usd_com":210.0},{"codigo":"PROD-210","nombre":"TRITURADORA HTC03 GASOLINA MQP 190F","categoria":"TRITURADORA","marca":"MQP","pvp":1900.0,"pvp_tarjeta":2090.0,"comision":0.1,"usd_com":190.0},{"codigo":"PROD-211","nombre":"TRITURADORA HTC01 GASOLINA DUCAR170F","categoria":"TRITURADORA","marca":"MQP","pvp":1100.0,"pvp_tarjeta":1210.0,"comision":0.1,"usd_com":110.0},{"codigo":"PROD-212","nombre":"ZANJADORA AGRICOLA 110MM*800MM  15HP 188F","categoria":"ZANJADORA","marca":"MQP","pvp":3200.0,"pvp_tarjeta":3520.0,"comision":0.05,"usd_com":160.0}];
+
+// ── STATE ──────────────────────────────────────────────────
+let carrito    = [];
+let catActiva  = 'TODOS';
+let busqueda   = '';
+let cuotaMeses = 6;
+let numPRF     = genNum();
+let historial  = JSON.parse(localStorage.getItem('imag_hist') || '[]');
+
+function genNum() {
+  var d = new Date(), r = String(Math.floor(Math.random()*999)+1).padStart(3,'0');
+  return 'PRF-'+d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+'-'+r;
+}
+function p2(n) { return String(n).padStart(2,'0'); }
+
+// ── NAVIGATION ─────────────────────────────────────────────
+function ir(id) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('page-'+id).classList.add('active');
+  var nb = document.querySelector('.nav-btn[data-page="'+id+'"]');
+  if (nb) nb.classList.add('active');
+  if (id === 'carrito')   renderCarrito();
+  if (id === 'proforma')  renderProforma();
+  if (id === 'historial') renderHistorial();
+  if (id === 'catalogo')  syncBar();
+  window.scrollTo(0,0);
+}
+function syncBar() {
+  var hh = document.querySelector('.hdr').offsetHeight;
+  var cb = document.getElementById('cat-bar');
+  if (cb) cb.style.top = hh + 'px';
+}
+
+// ── CATALOG ────────────────────────────────────────────────
+function initCatalogo() {
+  var set = new Set();
+  PRODS.forEach(function(p){ if (p.categoria) set.add(p.categoria.trim()); });
+  var cats = ['TODOS'].concat(Array.from(set).sort());
+  var row = document.getElementById('chips');
+  row.innerHTML = '';
+  cats.forEach(function(cat) {
+    var btn = document.createElement('button');
+    btn.className = 'chip' + (cat === 'TODOS' ? ' active' : '');
+    btn.textContent = cat;
+    btn.dataset.cat = cat;
+    btn.addEventListener('click', function(){ setCat(cat); });
+    row.appendChild(btn);
+  });
+  syncBar();
+  renderGrid();
+}
+
+function setCat(cat) {
+  catActiva = cat;
+  document.querySelectorAll('.chip').forEach(function(c){
+    c.classList.toggle('active', c.dataset.cat === cat);
+  });
+  var active = document.querySelector('.chip.active');
+  if (active) active.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+  renderGrid();
+}
+
+function filtrar() {
+  busqueda = document.getElementById('srch').value.toLowerCase().trim();
+  renderGrid();
+}
+
+function renderGrid() {
+  var grid = document.getElementById('grid');
+  var lista = PRODS.slice();
+  if (catActiva !== 'TODOS') {
+    lista = lista.filter(function(p){ return (p.categoria||'').trim() === catActiva; });
+  }
+  if (busqueda) {
+    lista = lista.filter(function(p){
+      return p.nombre.toLowerCase().indexOf(busqueda) >= 0 ||
+             p.codigo.toLowerCase().indexOf(busqueda) >= 0 ||
+             (p.marca||'').toLowerCase().indexOf(busqueda) >= 0;
+    });
+  }
+  grid.innerHTML = '';
+  if (lista.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><div style="font-size:32px;margin-bottom:8px">🔍</div><p>Sin resultados para "'+esc(busqueda)+'"</p></div>';
+    return;
+  }
+  lista.forEach(function(p) {
+    var inC = carrito.find(function(c){ return c.codigo === p.codigo; });
+    var qty = inC ? inC.cantidad : 0;
+    var com = Number(p.usd_com) || (p.pvp * (p.comision || 0));
+
+    var div = document.createElement('div');
+    div.className = 'card' + (qty > 0 ? ' in-cart' : '');
+    div.id = 'card-' + p.codigo;
+
+    var inner = '';
+    if (qty > 0) inner += '<div class="card-qty">'+qty+'</div>';
+    inner += '<span class="card-cat">'+esc(p.categoria||'')+'</span>';
+    inner += '<div class="card-name">'+esc(p.nombre)+'</div>';
+    inner += '<div class="card-row"><span class="card-code">'+esc(p.codigo)+'</span><span class="card-brand">'+esc(p.marca||'')+'</span></div>';
+    inner += '<div class="card-price">$'+fmt(p.pvp)+' <small>USD</small></div>';
+    inner += '<div class="card-com"><span class="card-com-lbl">💰 Tu comisión</span><span class="card-com-val">$'+fmt(com)+'</span></div>';
+    div.innerHTML = inner;
+
+    var acts = document.createElement('div');
+    acts.className = 'card-actions';
+
+    var btnAdd = document.createElement('button');
+    btnAdd.className = 'btn-add' + (qty > 0 ? ' added' : '');
+    btnAdd.textContent = qty > 0 ? '✓ En carrito' : '+ Agregar';
+    (function(codigo){ btnAdd.addEventListener('click', function(){ addToCart(codigo); }); })(p.codigo);
+
+    acts.appendChild(btnAdd);
+    div.appendChild(acts);
+    grid.appendChild(div);
+  });
+}
+
+// ── CART ───────────────────────────────────────────────────
+function addToCart(codigo) {
+  var prod = PRODS.find(function(p){ return p.codigo === codigo; });
+  if (!prod) return;
+  var idx = carrito.findIndex(function(c){ return c.codigo === codigo; });
+  if (idx >= 0) carrito[idx].cantidad++;
+  else carrito.push(Object.assign({}, prod, {cantidad:1}));
+  syncContador();
+  renderGrid();
+  toast('✓ ' + prod.nombre.substring(0,30) + (prod.nombre.length > 30 ? '…' : '') + ' agregado');
+}
+
+function qtyChange(codigo, d) {
+  var idx = carrito.findIndex(function(c){ return c.codigo === codigo; });
+  if (idx < 0) return;
+  carrito[idx].cantidad += d;
+  if (carrito[idx].cantidad <= 0) carrito.splice(idx, 1);
+  syncContador(); renderCarrito(); renderGrid();
+}
+
+function delItem(codigo) {
+  carrito = carrito.filter(function(c){ return c.codigo !== codigo; });
+  syncContador(); renderCarrito(); renderGrid();
+}
+
+function syncContador() {
+  var total = carrito.reduce(function(s,c){ return s + c.cantidad; }, 0);
+  document.getElementById('cart-badge').textContent = total;
+  var pill = document.getElementById('com-pill');
+  if (carrito.length > 0) {
+    pill.style.display = 'flex';
+    document.getElementById('com-pill-val').textContent = '$' + fmt(getTotals().comision);
+  } else {
+    pill.style.display = 'none';
+  }
+}
+
+function getTotals() {
+  var contado  = carrito.reduce(function(s,c){ return s + c.pvp * c.cantidad; }, 0);
+  var tarjeta  = carrito.reduce(function(s,c){ return s + c.pvp_tarjeta * c.cantidad; }, 0);
+  var comision = carrito.reduce(function(s,c){ return s + (Number(c.usd_com)||(c.pvp*(c.comision||0))) * c.cantidad; }, 0);
+  return {contado:contado, tarjeta:tarjeta, comision:comision};
+}
+
+function renderCarrito() {
+  var wrap = document.getElementById('cart-wrap');
+  if (carrito.length === 0) {
+    wrap.innerHTML = '<div class="cart-empty"><div class="ei">🛒</div><p style="margin-bottom:4px">Tu carrito está vacío</p><p style="font-size:11px;opacity:.6">Agrega productos desde el catálogo</p></div>';
+    return;
+  }
+  var t = getTotals();
+  var html = '';
+
+  carrito.forEach(function(item) {
+    var comItem = (Number(item.usd_com)||(item.pvp*(item.comision||0))) * item.cantidad;
+    html += '<div class="ci">';
+    html += '<div class="ci-info">';
+    html += '<div class="ci-name">'+esc(item.nombre)+'</div>';
+    html += '<div class="ci-cat">'+esc(item.categoria)+'</div>';
+    html += '<div class="ci-unit">$'+fmt(item.pvp)+' c/u</div>';
+    html += '<div class="ci-com">💰 <b>$'+fmt(comItem)+'</b> comisión</div>';
+    html += '</div>';
+    html += '<div class="ci-ctrl">';
+    html += '<button class="btn-del" onclick="delItem(\''+item.codigo+'\')">✕</button>';
+    html += '<div class="qty">';
+    html += '<button class="q-btn" onclick="qtyChange(\''+item.codigo+'\',-1)">−</button>';
+    html += '<span class="q-num">'+item.cantidad+'</span>';
+    html += '<button class="q-btn" onclick="qtyChange(\''+item.codigo+'\',1)">+</button>';
+    html += '</div>';
+    html += '<div class="ci-sub">$'+fmt(item.pvp*item.cantidad)+'</div>';
+    html += '</div></div>';
+  });
+
+  // Comision panel
+  html += '<div class="com-panel">';
+  html += '<div><div class="cpl-lbl">💰 Tu comisión total</div>';
+  html += '<div class="cpl-sub">'+carrito.length+' prod. · '+carrito.reduce(function(s,c){return s+c.cantidad;},0)+' unid.</div></div>';
+  html += '<div class="cpl-val">$'+fmt(t.comision)+'</div></div>';
+
+  // Totals
+  html += '<div class="totals">';
+  html += '<div class="t-row main"><span class="t-lbl">💵 Total Contado</span><span class="t-val">$'+fmt(t.contado)+'</span></div>';
+  html += '<div class="t-row"><span class="t-lbl">💳 Total con Tarjeta</span><span class="t-val" style="font-size:15px">$'+fmt(t.tarjeta)+'</span></div>';
+  html += '<button class="btn-go" onclick="ir(\'cliente\')">👤 Datos del Cliente →</button>';
+  html += '</div>';
+
+  // Calculadora cuotas
+  var mesesOpts = [3, 6, 9, 12, 18, 24];
+  html += '<div class="cuotas-box">';
+  html += '<div class="cuotas-title">🧮 Calculadora de Cuotas</div>';
+  html += '<div class="cuotas-tabs">';
+  mesesOpts.forEach(function(m) {
+    html += '<button class="cuota-tab'+(m===cuotaMeses?' active':'')+'" onclick="setCuota('+m+')">'+m+' meses</button>';
+  });
+  html += '</div>';
+  html += '<div class="cuotas-result">';
+  html += '<div class="cuota-monto">$'+fmt(t.contado/cuotaMeses)+'</div>';
+  html += '<div class="cuota-sub">por mes · '+cuotaMeses+' meses</div>';
+  html += '<div class="cuota-nota">* Referencial. Sin interés declarado al cliente.</div>';
+  html += '</div></div>';
+
+  wrap.innerHTML = html;
+}
+
+function setCuota(m) {
+  cuotaMeses = m;
+  renderCarrito();
+}
+
+// ── HISTORIAL ──────────────────────────────────────────────
+function guardarHistorial() {
+  var t = getTotals();
+  var entry = {
+    id: numPRF,
+    fecha: new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'}),
+    cliente: document.getElementById('c-nombre').value || '—',
+    ciudad: document.getElementById('c-ciudad').value || '',
+    items: carrito.length,
+    unidades: carrito.reduce(function(s,c){ return s+c.cantidad; }, 0),
+    total: t.contado,
+    comision: t.comision,
+    status: 'enviada',
+    prods: carrito.map(function(c){ return c.nombre.substring(0,32); }).join(', ')
+  };
+  historial.unshift(entry);
+  if (historial.length > 60) historial = historial.slice(0,60);
+  localStorage.setItem('imag_hist', JSON.stringify(historial));
+}
+
+function setStatus(id, val) {
+  var idx = historial.findIndex(function(h){ return h.id === id; });
+  if (idx < 0) return;
+  historial[idx].status = val;
+  localStorage.setItem('imag_hist', JSON.stringify(historial));
+  var sel = document.getElementById('sts-'+id);
+  if (sel) { sel.className = 'sts ' + val; }
+}
+
+function renderHistorial() {
+  var wrap = document.getElementById('hist-wrap');
+  if (historial.length === 0) {
+    wrap.innerHTML = '<div class="hist-hdr"><div class="hist-title">Historial</div></div><div class="hist-empty"><div style="font-size:36px;margin-bottom:8px;opacity:.3">📋</div><p>Sin cotizaciones aún</p><p style="font-size:11px;margin-top:4px;opacity:.6">Genera tu primera proforma</p></div>';
+    return;
+  }
+  var ganadas = historial.filter(function(h){ return h.status === 'ganada'; });
+  var totalCom = historial.reduce(function(s,h){ return s+h.comision; }, 0);
+
+  var html = '';
+  html += '<div class="hist-hdr"><div class="hist-title">Historial</div><button class="btn-clr" onclick="clearHist()">Limpiar</button></div>';
+  html += '<div class="stat-bar">';
+  html += '<div class="stat-card"><div class="stat-val">'+historial.length+'</div><div class="stat-lbl">Cotizaciones</div></div>';
+  html += '<div class="stat-card green"><div class="stat-val">'+ganadas.length+'</div><div class="stat-lbl">Ganadas</div></div>';
+  html += '<div class="stat-card orange"><div class="stat-val">$'+fmt(totalCom)+'</div><div class="stat-lbl">Comisión</div></div>';
+  html += '</div>';
+
+  historial.forEach(function(h) {
+    var sts = h.status || 'enviada';
+    html += '<div class="hcard">';
+    html += '<div class="hcard-top"><div class="hcard-num">'+esc(h.id)+'</div><div class="hcard-date">'+esc(h.fecha)+'</div></div>';
+    html += '<div class="hcard-client">'+esc(h.cliente)+(h.ciudad?' · '+esc(h.ciudad):'')+'</div>';
+    html += '<div class="hcard-items">'+h.items+' producto'+(h.items>1?'s':'')+' · '+h.unidades+' unidades</div>';
+    html += '<div class="hcard-prods">'+esc(h.prods)+'</div>';
+    html += '<div class="hcard-bottom">';
+    html += '<div><div class="hcard-total">$'+fmt(h.total)+'</div><div class="hcard-com">💰 $'+fmt(h.comision)+' comisión</div></div>';
+    html += '<select class="sts '+sts+'" id="sts-'+esc(h.id)+'" onchange="setStatus(\''+esc(h.id)+'\',this.value)">';
+    html += '<option value="enviada"'+(sts==='enviada'?' selected':'')+'>📤 Enviada</option>';
+    html += '<option value="negoc"'+(sts==='negoc'?' selected':'')+'>🤝 Negociando</option>';
+    html += '<option value="ganada"'+(sts==='ganada'?' selected':'')+'>✅ Ganada</option>';
+    html += '<option value="perdida"'+(sts==='perdida'?' selected':'')+'>❌ Perdida</option>';
+    html += '</select>';
+    html += '</div></div>';
+  });
+
+  wrap.innerHTML = html;
+}
+
+function clearHist() {
+  if (!confirm('¿Limpiar todo el historial?')) return;
+  historial = [];
+  localStorage.setItem('imag_hist', '[]');
+  renderHistorial();
+}
+
+// ── PROFORMA ───────────────────────────────────────────────
+function genProforma() {
+  if (!document.getElementById('c-nombre').value.trim()) { toast('⚠ Ingresa el nombre del cliente'); return; }
+  if (!document.getElementById('v-nombre').value.trim()) { toast('⚠ Ingresa el nombre del vendedor'); return; }
+  if (carrito.length === 0) { toast('⚠ El carrito está vacío'); return; }
+  guardarHistorial();
+  ir('proforma');
+}
+
+function renderProforma() {
+  var doc = document.getElementById('pf-doc');
+  var t = getTotals();
+  var fecha = new Date().toLocaleDateString('es-EC', {year:'numeric', month:'long', day:'numeric'});
+  var cli = {
+    nombre:  document.getElementById('c-nombre').value  || '—',
+    cedula:  document.getElementById('c-cedula').value  || '—',
+    tel:     document.getElementById('c-tel').value     || '—',
+    empresa: document.getElementById('c-empresa').value || '—',
+    ciudad:  document.getElementById('c-ciudad').value  || '—'
+  };
+  var vnd = {
+    nombre: document.getElementById('v-nombre').value || '—',
+    wsp:    document.getElementById('v-wsp').value    || '—'
+  };
+
+  var rows = '';
+  carrito.forEach(function(item) {
+    rows += '<tr>';
+    rows += '<td>'+esc(item.codigo)+'</td>';
+    rows += '<td style="min-width:90px">'+esc(item.nombre)+'</td>';
+    rows += '<td style="text-align:center">'+item.cantidad+'</td>';
+    rows += '<td style="text-align:right">$'+fmt(item.pvp)+'</td>';
+    rows += '<td>$'+fmt(item.pvp*item.cantidad)+'</td>';
+    rows += '</tr>';
+  });
+
+  doc.innerHTML =
+    '<div class="pf-head">' +
+      '<div class="pf-co">🌿 IM AgroJardinería</div>' +
+      '<div class="pf-sub">Distribuidor de Maquinaria Agrícola</div>' +
+      '<div class="pf-meta"><span class="pf-num">'+esc(numPRF)+'</span><span class="pf-date">'+fecha+'</span></div>' +
+    '</div>' +
+    '<div class="pf-stripe"></div>' +
+    '<div class="pf-body">' +
+      '<div class="pf-sec"><h4>🧾 Cliente</h4>' +
+        '<div class="cli-grid">' +
+          '<div class="cli-item"><strong>Nombre</strong>'+esc(cli.nombre)+'</div>' +
+          '<div class="cli-item"><strong>Cédula/RUC</strong>'+esc(cli.cedula)+'</div>' +
+          '<div class="cli-item"><strong>Teléfono</strong>'+esc(cli.tel)+'</div>' +
+          '<div class="cli-item"><strong>Empresa</strong>'+esc(cli.empresa)+'</div>' +
+          '<div class="cli-item"><strong>Ciudad</strong>'+esc(cli.ciudad)+'</div>' +
+          '<div class="cli-item"><strong>Vendedor</strong>'+esc(vnd.nombre)+'</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pf-sec"><h4>📦 Productos</h4>' +
+        '<div style="overflow-x:auto"><table class="tbl">' +
+          '<thead><tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant</th><th style="text-align:right">P.Unit</th><th>Total</th></tr></thead>' +
+          '<tbody>'+rows+'</tbody>' +
+        '</table></div>' +
+        '<div class="pf-total-main"><span class="pf-tm-lbl">💵 TOTAL CONTADO</span><span class="pf-tm-val">$'+fmt(t.contado)+'</span></div>' +
+        '<div class="pf-t-row"><span style="color:var(--slate)">💳 Total con Tarjeta</span><strong>$'+fmt(t.tarjeta)+'</strong></div>' +
+      '</div>' +
+      '<div class="pf-sec"><h4>📋 Condiciones</h4>' +
+        '<div class="pf-conds">' +
+          '<div class="pf-cond"><h5>🛡 Garantía</h5><p>12 meses contra defectos de fabricación, válida con factura.</p></div>' +
+          '<div class="pf-cond"><h5>🚚 Entrega</h5><p>Inmediata en stock. Pedidos especiales: 5–10 días hábiles.</p></div>' +
+          '<div class="pf-cond"><h5>💳 Pago</h5><p>Contado, transferencia bancaria o tarjeta de crédito/débito.</p></div>' +
+          '<div class="pf-cond"><h5>📞 Contacto</h5><p>'+esc(vnd.nombre)+'<br>WhatsApp: '+esc(vnd.wsp)+'</p></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pf-note">Proforma válida 7 días · Precios en USD · No incluye IVA salvo indicación</div>' +
+    '</div>';
+}
+
+// ── PDF ────────────────────────────────────────────────────
+async function descargarPDF() {
+  document.getElementById('loader').style.display = 'flex';
+  await new Promise(function(r){ setTimeout(r, 120); });
+  try {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({unit:'mm', format:'a4'});
+    var t = getTotals();
+    var fecha = new Date().toLocaleDateString('es-EC', {year:'numeric', month:'long', day:'numeric'});
+    var cli = {
+      nombre:  document.getElementById('c-nombre').value  || '—',
+      cedula:  document.getElementById('c-cedula').value  || '—',
+      tel:     document.getElementById('c-tel').value     || '—',
+      empresa: document.getElementById('c-empresa').value || '—',
+      ciudad:  document.getElementById('c-ciudad').value  || '—'
+    };
+    var vnd = {
+      nombre: document.getElementById('v-nombre').value || '—',
+      wsp:    document.getElementById('v-wsp').value    || '—'
+    };
+    var W=210, M=14, y=0;
+    doc.setFillColor(14,35,24); doc.rect(0,0,W,38,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(17);
+    doc.text('IM AGROJARDINERIA', M, 13);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(130,180,150);
+    doc.text('DISTRIBUIDOR DE MAQUINARIA AGRICOLA', M, 20);
+    doc.setFontSize(8.5); doc.setTextColor(255,255,255);
+    doc.text(numPRF, M, 30); doc.text(fecha, W-M, 30, {align:'right'});
+    doc.setFillColor(212,101,26); doc.rect(0,38,W,2.5,'F');
+    y = 50;
+    doc.setTextColor(14,35,24); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+    doc.text('DATOS DEL CLIENTE', M, y); y+=4;
+    doc.setDrawColor(220,220,212); doc.line(M,y,W-M,y); y+=5.5;
+    doc.setFontSize(8);
+    var c2 = W/2+5;
+    var filas = [
+      ['Cliente:', cli.nombre, 'Cedula/RUC:', cli.cedula],
+      ['Telefono:', cli.tel,   'Ciudad:',     cli.ciudad],
+      ['Empresa:',  cli.empresa,'Vendedor:',   vnd.nombre]
+    ];
+    filas.forEach(function(r) {
+      doc.setFont('helvetica','bold'); doc.setTextColor(90,90,90); doc.text(r[0], M, y);
+      doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20); doc.text(r[1], M+19, y);
+      doc.setFont('helvetica','bold'); doc.setTextColor(90,90,90); doc.text(r[2], c2, y);
+      doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20); doc.text(r[3], c2+23, y);
+      y += 5.5;
+    });
+    y += 4;
+    doc.setFillColor(14,35,24); doc.rect(M,y,W-2*M,7,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+    var cx = [M, M+22, M+112, M+128, M+150];
+    var heads = ['CODIGO','DESCRIPCION','CANT.','P.UNIT','TOTAL'];
+    heads.forEach(function(h,i){ doc.text(h, cx[i]+1, y+4.8); });
+    y += 7;
+    doc.setFontSize(7.8); doc.setTextColor(20,20,20);
+    carrito.forEach(function(item, i) {
+      var rh = 6.5;
+      if (y+rh > 272) { doc.addPage(); y=18; }
+      if (i%2===1) { doc.setFillColor(247,247,244); doc.rect(M,y,W-2*M,rh,'F'); }
+      doc.setDrawColor(228,228,220); doc.line(M,y+rh,W-M,y+rh);
+      doc.setFont('helvetica','normal');
+      doc.text(item.codigo, cx[0]+1, y+4.4);
+      var nb = item.nombre.length > 52 ? item.nombre.substring(0,50)+'...' : item.nombre;
+      doc.text(nb, cx[1]+1, y+4.4);
+      doc.text(String(item.cantidad), cx[2]+8, y+4.4, {align:'right'});
+      doc.text('$'+fmt(item.pvp), cx[3]+21, y+4.4, {align:'right'});
+      doc.setFont('helvetica','bold');
+      doc.text('$'+fmt(item.pvp*item.cantidad), cx[4]+25, y+4.4, {align:'right'});
+      y += rh;
+    });
+    y += 6;
+    doc.setFillColor(14,35,24); doc.rect(M,y,W-2*M,9,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text('TOTAL CONTADO:', M+3, y+6.2);
+    doc.text('$'+fmt(t.contado), W-M-3, y+6.2, {align:'right'});
+    y += 13;
+    doc.setTextColor(100,100,100); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text('Total con tarjeta: $'+fmt(t.tarjeta), W-M, y, {align:'right'});
+    y += 12;
+    if (y > 242) { doc.addPage(); y=18; }
+    doc.setTextColor(14,35,24); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+    doc.text('CONDICIONES', M, y); y+=3.5;
+    doc.setDrawColor(220,220,212); doc.line(M,y,W-M,y); y+=5;
+    doc.setTextColor(90,90,90); doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
+    var conds = [
+      'Garantia: 12 meses contra defectos de fabricacion. Valida con factura.',
+      'Entrega: Inmediata en stock. Pedidos especiales: 5-10 dias habiles.',
+      'Pago: Contado, transferencia o tarjeta de credito/debito.',
+      'Contacto: '+vnd.nombre+' | WhatsApp: '+vnd.wsp,
+      'Proforma valida 7 dias. Precios en USD. '+numPRF
+    ];
+    conds.forEach(function(l){ doc.text(l, M, y); y+=4.8; });
+    doc.setFillColor(212,101,26); doc.rect(0,289,W,8,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(7);
+    doc.text('IM AGROJARDINERIA · Distribuidor de Maquinaria Agricola', W/2, 294, {align:'center'});
+    doc.save(numPRF+'.pdf');
+    toast('✅ PDF descargado correctamente');
+  } catch(e) {
+    console.error(e);
+    toast('❌ Error al generar PDF. Intenta de nuevo.');
+  } finally {
+    document.getElementById('loader').style.display = 'none';
+  }
+}
+
+// ── WHATSAPP ───────────────────────────────────────────────
+function enviarWhatsApp() {
+  var wsp = document.getElementById('v-wsp').value.trim().replace(/[^0-9]/g, '');
+  var t = getTotals();
+  var cli = document.getElementById('c-nombre').value || 'Cliente';
+  var ciudad = document.getElementById('c-ciudad').value || '';
+  var msg = '🌿 *IM AGROJARDINERÍA*\n*PROFORMA ' + numPRF + '*\n\n';
+  msg += '*Cliente:* ' + cli + (ciudad ? ' · ' + ciudad : '') + '\n\n';
+  msg += '*Productos:*\n';
+  carrito.forEach(function(item) {
+    msg += '• ' + item.nombre + '\n  ' + item.cantidad + ' × $' + fmt(item.pvp) + ' = *$' + fmt(item.pvp*item.cantidad) + '*\n';
+  });
+  msg += '\n*TOTAL CONTADO: $' + fmt(t.contado) + '*\n';
+  msg += 'Total con tarjeta: $' + fmt(t.tarjeta) + '\n\n';
+  msg += '_Proforma válida 7 días. Precios en USD._';
+  var tel = wsp ? '593' + wsp.replace(/^0/, '') : '';
+  window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg) + (tel ? '&phone='+tel : ''), '_blank');
+}
+
+// ── NUEVA COTIZACIÓN ───────────────────────────────────────
+function nuevaCotizacion() {
+  if (!confirm('¿Iniciar nueva cotización? Se limpiará el carrito.')) return;
+  carrito = []; numPRF = genNum();
+  syncContador();
+  ['c-nombre','c-cedula','c-tel','c-empresa','c-ciudad','v-nombre','v-wsp'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ir('catalogo');
+}
+
+// ── UTILS ──────────────────────────────────────────────────
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '0.00';
+  return Number(n).toLocaleString('es-EC', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function esc(s) {
+  var str = String(s || '');
+  var map = {'&':'&amp;', '<':'&lt;', '>':'&gt;'};
+  return str.replace(/[&<>]/g, function(c){ return map[c]; });
+}
+
+function toast(msg, dur) {
+  dur = dur || 2600;
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.classList.remove('show'); }, dur);
+}
+
+// ── INIT ───────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  initCatalogo();
+  syncBar();
+});
+window.addEventListener('resize', syncBar);
+
+
+
+</script>
+</body></html>
